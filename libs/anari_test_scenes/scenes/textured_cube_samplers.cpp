@@ -6,6 +6,7 @@
 #include "anari/anari_cpp/ext/glm.h"
 #include "glm/ext/matrix_transform.hpp"
 
+
 static void anari_free(void *ptr, void *)
 {
   std::free(ptr);
@@ -78,10 +79,8 @@ std::vector<ParameterInfo> TexturedCubeSamplers::parameters()
 {
   return {
       {"filter", ANARI_BOOL, true, "Use nearest filter (linear will be used instead)"},
-      {"wrapMode1", ANARI_INT32, 1, "1 - clampToEdge, 2 - repeat, 3 - mirrorRepeat"},
-      {"wrapMode2", ANARI_INT32, 1, "1 - clampToEdge, 2 - repeat, 3 - mirrorRepeat"},
-      //{"fileName", ANARI_STRING, std::string(), ".obj file to open."}
-      //
+      {"wrapMode1(clampToEdge, repeat, mirrorRepeat)", ANARI_INT32, int(1), "1 - clampToEdge, 2 - repeat, 3 - mirrorRepeat"},
+      {"wrapMode2(clampToEdge, repeat, mirrorRepeat)", ANARI_INT32, int(1), "1 - clampToEdge, 2 - repeat, 3 - mirrorRepeat"},
   };
 }
 
@@ -90,14 +89,14 @@ void TexturedCubeSamplers::commit()
   anari::Device d = m_device;
 
   const bool filter = getParam<bool>("filter", true);
-  int wrapMode1 = getParam<int>("WrapMode1", 1);
-  int wrapMode2 = getParam<int>("WrapMode2", 1);
+  int wrapMode1 = getParam<int>("wrapMode1(clampToEdge, repeat, mirrorRepeat)", 1);
+  int wrapMode2 = getParam<int>("wrapMode2(clampToEdge, repeat, mirrorRepeat)", 1);
 
-  std::vector<glm::vec4> tArray = {
-      {1.f, 0.f, 0.f, 0.f},
-      {0.f, 1.f, 0.f, 0.f},
-      {0.f, 0.f, 1.f, 0.f},
-      {0.f, 0.f, 0.f, 1.f}};
+  if (wrapMode1 < 1 || wrapMode1 > 3)
+    throw std::runtime_error("'wrapMode1' must be 1,2 or 3");
+
+  if (wrapMode2 < 1 || wrapMode2 > 3)
+    throw std::runtime_error("'wrapMode2' must be 1,2 or 3");
 
   auto geom = anari::newObject<anari::Geometry>(d, "triangle");
   anari::setAndReleaseParameter(d,
@@ -120,7 +119,25 @@ void TexturedCubeSamplers::commit()
   auto tex = anari::newObject<anari::Sampler>(d, "image2D");
   anari::setAndReleaseParameter(d, tex, "image", makeTextureData(d, 8));
   anari::setParameter(d, tex, "inAttribute", "attribute0");
-  //anari::setParameter(d, tex, "inTransform", anari::newArray2D(d, tArray.data(), tArray.size());
+  
+  const float inTransform[16] = {
+      0.5f, 0.5f, 0.4f, 0.f,
+      0.1f, 0.2f, 0.3f, 0.f,
+      0.f, 0.f, 1.f, 0.f,
+      0.f, 0.f, 0.f, 0.f};
+    
+  anari::setParameter(d, tex, "inTransform", inTransform);
+
+  const float outTransform[16] = {
+      0.5f, 0.5f, 0.4f, 0.f,
+      0.1f, 0.2f, 0.3f, 0.f,
+      0.f, 0.f, 0.1f, 0.f,
+      0.7f, 0.1f, 0.3f, 0.f};
+
+  anari::setParameter(d, tex, "outTransform", outTransform);
+
+  anari::setParameter(d, tex, "inAttribute", "attribute0");
+
   if (filter) {
       anari::setParameter(d, tex, "filter", "nearest");
       printf("Setting filter to nearest\n");
@@ -132,18 +149,36 @@ void TexturedCubeSamplers::commit()
   switch (wrapMode1) {
       case 1:
         anari::setParameter(d, tex, "WrapMode1", "clampToEdge");
-        printf("Setting WrapModel1 to clampEdge.\n");
+        printf("Setting WrapMode1 to clampEdge.\n");
         break;
       case 2:
         anari::setParameter(d, tex, "WrapMode1", "repeat");
-        printf("Setting WrapModel1 to repeat.\n");
+        printf("Setting WrapMode1 to repeat.\n");
         break;
       case 3:
         anari::setParameter(d, tex, "WrapMode1", "mirrorRepeat");
-        printf("Setting WrapModel1 to mirrorRepeat.\n");
+        printf("Setting WrapMode1 to mirrorRepeat.\n");
         break;
       default:
         throw std::runtime_error("'WrapMode1' must be >= 1 and <= 3");
+        break;
+  }
+  std::cout << wrapMode1;
+  switch (wrapMode2) {
+      case 1:
+        anari::setParameter(d, tex, "WrapMode2", "clampToEdge");
+        printf("Setting WrapMode2 to clampEdge.\n");
+        break;
+      case 2:
+        anari::setParameter(d, tex, "WrapMode2", "repeat");
+        printf("Setting WrapMode2 to repeat.\n");
+        break;
+      case 3:
+        anari::setParameter(d, tex, "WrapMode2", "mirrorRepeat");
+        printf("Setting WrapMode2 to mirrorRepeat.\n");
+        break;
+      default:
+        throw std::runtime_error("'WrapMode2' must be >= 1 and <= 3");
         break;
   }
 
@@ -222,4 +257,6 @@ TestScene *sceneTexturedCubeSamplers(anari::Device d)
 }
 
 } // namespace scenes
+
+ANARI_TYPEFOR_SPECIALIZATION(glm::mat4, ANARI_FLOAT32_MAT4);
 } // namespace anari
