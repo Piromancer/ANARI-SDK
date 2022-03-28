@@ -13,6 +13,18 @@
 #include "scenes/instanced_cubes.h"
 #include "scenes/random_spheres.h"
 #include "scenes/textured_cube.h"
+#include "scenes/volume_test.h"
+#include "scenes/cornell_box_directional.h"
+#include "scenes/cornell_box_point.h"
+#include "scenes/cornell_box_spot.h"
+#include "scenes/cornell_box_ring.h"
+#include "scenes/cornell_box_quad.h"
+#include "scenes/cornell_box_hdri.h"
+#include "scenes/cornell_box_multilight.h"
+#include "scenes/cornell_box_quad_geom.h"
+#include "scenes/cornell_box_cone_geom.h"
+#include "scenes/cornell_box_cylinder_geom.h"
+#include "scenes/textured_cube_samplers.h"
 
 namespace anari {
 namespace scenes {
@@ -35,6 +47,18 @@ static void init()
     scenes["textured_cube"] = &sceneTexturedCube;
     scenes["random_spheres"] = &sceneRandomSpheres;
     scenes["file_obj"] = &sceneFileObj;
+    scenes["volume_test"] = &sceneVolumeTest;
+    scenes["cornell_box_directional"] = &sceneCornellBoxDirectional;
+    scenes["cornell_box_point"] = &sceneCornellBoxPoint;
+    scenes["cornell_box_spot"] = &sceneCornellBoxSpot;
+    scenes["cornell_box_ring"] = &sceneCornellBoxRing;
+    scenes["cornell_box_quad"] = &sceneCornellBoxQuad;
+    scenes["cornell_box_hdri"] = &sceneCornellBoxHDRI;
+    scenes["cornell_box_multilight"] = &sceneCornellBoxMultilight;
+    scenes["textured_cube_samplers"] = &sceneTexturedCubeSamplers;
+    scenes["cornell_box_quad_geom"] = &sceneCornellBoxQuadGeometry;
+    scenes["cornell_box_cone_geom"] = &sceneCornellBoxCone;
+    scenes["cornell_box_cylinder_geom"] = &sceneCornellBoxCylinder;
   }
 }
 

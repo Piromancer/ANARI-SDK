@@ -1,7 +1,7 @@
 // Copyright 2021 The Khronos Group
 // SPDX-License-Identifier: Apache-2.0
 
-#include "cornell_box.h"
+#include "cornell_box_directional.h"
 
 namespace anari {
 namespace scenes {
@@ -220,24 +220,59 @@ static std::vector<glm::vec4> colors = {
 
 // CornelBox definitions //////////////////////////////////////////////////////
 
-CornellBox::CornellBox(anari::Device d) : TestScene(d)
+CornellBoxDirectional::CornellBoxDirectional(anari::Device d) : TestScene(d)
 {
   m_world = anari::newObject<anari::World>(m_device);
 }
 
-CornellBox::~CornellBox()
+CornellBoxDirectional::~CornellBoxDirectional()
 {
   anari::release(m_device, m_world);
 }
 
-anari::World CornellBox::world()
+anari::World CornellBoxDirectional::world()
 {
   return m_world;
 }
 
-void CornellBox::commit()
+std::vector<ParameterInfo> CornellBoxDirectional::parameters()
+{
+  return {
+      {"angularDiameter", ANARI_FLOAT32, 0.f, ""},
+      {"irradiance", ANARI_FLOAT32, 2.5f, ""},
+      {"R", ANARI_FLOAT32, 0.220f, ""},
+      {"G", ANARI_FLOAT32, 0.220f, ""},
+      {"B", ANARI_FLOAT32, 0.150f, ""},
+      {"dirX", ANARI_FLOAT32, 0.0f, ""},
+      {"dirY", ANARI_FLOAT32, 0.0f, ""},
+      {"dirZ", ANARI_FLOAT32, 1.0f, ""}
+      //
+  };
+}
+
+void CornellBoxDirectional::commit()
 {
   auto d = m_device;
+
+  anari::Light light;
+
+  float irradiance = getParam<float>("irradiance", 2.5f);
+  float angularDiameter = getParam<float>("angularDiameter", 0.0f);
+
+  float red = getParam<float>("R", 0.22f);
+  float green = getParam<float>("G", 0.22f);
+  float blue = getParam<float>("B", 0.15f);
+
+  float dirX = getParam<float>("dirX", 0.0f);
+  float dirY = getParam<float>("dirY", 0.0f);
+  float dirZ = getParam<float>("dirZ", 1.0f);
+
+  light = anari::newObject<anari::Light>(d, "directional");
+  anari::setParameter(d, light, "color", glm::vec3(red, green, blue));
+  anari::setParameter(d, light, "direction", glm::vec3(dirX, dirY, dirZ));
+  anari::setParameter(d, light, "irradiance", irradiance);
+  anari::setParameter(d, light, "angularDiameter", angularDiameter);
+  // anari::setParameter(d, light, "radiance", 1.f); //irradiance takes precedence if also specified
 
   auto geom = anari::newObject<anari::Geometry>(d, "triangle");
 
@@ -270,20 +305,6 @@ void CornellBox::commit()
       d, m_world, "surface", anari::newArray1D(d, &surface));
   anari::release(d, surface);
 
-  anari::Light light;
-
-  if (anari::deviceImplements(d, "ANARI_KHR_AREA_LIGHTS")) {
-    light = anari::newObject<anari::Light>(d, "quad");
-    anari::setParameter(d, light, "color", glm::vec3(0.78f, 0.551f, 0.183f));
-    anari::setParameter(d, light, "intensity", 47.f);
-    anari::setParameter(d, light, "position", glm::vec3(-0.23f, 0.98f, -0.16f));
-    anari::setParameter(d, light, "edge1", glm::vec3(0.47f, 0.0f, 0.0f));
-    anari::setParameter(d, light, "edge2", glm::vec3(0.0f, 0.0f, 0.38f));
-  } else {
-    light = anari::newObject<anari::Light>(d, "directional");
-    anari::setParameter(d, light, "direction", glm::vec3(0.f, -0.5f, 1.f));
-  }
-
   anari::commit(d, light);
 
   anari::setAndReleaseParameter(
@@ -291,31 +312,12 @@ void CornellBox::commit()
 
   anari::release(d, light);
 
-  anari::Camera camera = anari::newObject<anari::Camera>(d, "orthographic");
-  anari::setParameter(d, camera, "position", glm::vec3(0.5f, 0.5f, 0.5f));
-  anari::setParameter(d, camera, "direction", glm::vec3(0.5f, 0.5f, 0.5f));
-  anari::setParameter(d, camera, "up", glm::vec3(0.5f, 0.5f, 0.5f));
-
-  anari::commit(d, camera);
-
-  anari::setAndReleaseParameter(
-      d, m_world, "light", anari::newArray1D(d, &light));
-
-  anari::release(d, camera);
-  ANARICamera cam = anariNewCamera(d, "orthographic");
-  anari::setParameter(d, cam, "position", glm::vec3(1.5f, 1.5f, 1.5f));
-  anari::setParameter(d, cam, "direction", glm::vec3(1.5f, 1.5f, 1.5f));
-  anari::setParameter(d, cam, "up", glm::vec3(1.5f, 1.5f, 1.5f));
-  anariCommit(d, camera);
-  //anari::commit(d, cam);
-  //anari::release(d, cam);
-
   anari::commit(d, m_world);
 }
 
-TestScene *sceneCornellBox(anari::Device d)
+TestScene *sceneCornellBoxDirectional(anari::Device d)
 {
-  return new CornellBox(d);
+  return new CornellBoxDirectional(d);
 }
 
 } // namespace scenes

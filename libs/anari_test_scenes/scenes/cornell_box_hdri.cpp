@@ -1,10 +1,29 @@
 // Copyright 2021 The Khronos Group
 // SPDX-License-Identifier: Apache-2.0
 
-#include "cornell_box.h"
+#include "cornell_box_hdri.h"
 
 namespace anari {
 namespace scenes {
+
+static void anari_free(void *ptr, void *)
+{
+  std::free(ptr);
+}
+
+static anari::Array2D makeTextureData(anari::Device d, int dim)
+{
+  auto *data = new glm::vec3[dim * dim];
+
+  for (int h = 0; h < dim; h++) {
+    for (int w = 0; w < dim; w++) {
+      data[h * dim + w] = w & 1 ? glm::vec3(10.0f) : glm::vec3(10.0f);
+    }
+  }
+
+  return anariNewArray2D(
+      d, data, &anari_free, nullptr, ANARI_FLOAT32_VEC3, dim, dim);
+}
 
 // quad mesh data
 static std::vector<glm::vec3> vertices = {
@@ -220,22 +239,22 @@ static std::vector<glm::vec4> colors = {
 
 // CornelBox definitions //////////////////////////////////////////////////////
 
-CornellBox::CornellBox(anari::Device d) : TestScene(d)
+CornellBoxHDRI::CornellBoxHDRI(anari::Device d) : TestScene(d)
 {
   m_world = anari::newObject<anari::World>(m_device);
 }
 
-CornellBox::~CornellBox()
+CornellBoxHDRI::~CornellBoxHDRI()
 {
   anari::release(m_device, m_world);
 }
 
-anari::World CornellBox::world()
+anari::World CornellBoxHDRI::world()
 {
   return m_world;
 }
 
-void CornellBox::commit()
+void CornellBoxHDRI::commit()
 {
   auto d = m_device;
 
@@ -272,17 +291,13 @@ void CornellBox::commit()
 
   anari::Light light;
 
-  if (anari::deviceImplements(d, "ANARI_KHR_AREA_LIGHTS")) {
-    light = anari::newObject<anari::Light>(d, "quad");
-    anari::setParameter(d, light, "color", glm::vec3(0.78f, 0.551f, 0.183f));
-    anari::setParameter(d, light, "intensity", 47.f);
-    anari::setParameter(d, light, "position", glm::vec3(-0.23f, 0.98f, -0.16f));
-    anari::setParameter(d, light, "edge1", glm::vec3(0.47f, 0.0f, 0.0f));
-    anari::setParameter(d, light, "edge2", glm::vec3(0.0f, 0.0f, 0.38f));
-  } else {
-    light = anari::newObject<anari::Light>(d, "directional");
-    anari::setParameter(d, light, "direction", glm::vec3(0.f, -0.5f, 1.f));
-  }
+  //light = anari::newObject<anari::Light>(d, "hdri");
+  //anari::setParameter(d, light, "color", glm::vec3(0.11f, 0.38f, 0.212f));
+  //anari::setParameter(d, light, "up", glm::vec3(0.0f, 0.0f, 1.0f));
+  //anari::setParameter(d, light, "direction", glm::vec3(0.5f, 0.5f, 0.5f));
+  //anari::setParameter(d, light, "layout", "equirectangular");
+  //anari::setParameter(d, light, "radiance", makeTextureData(d, 8));
+  //anari::setParameter(d, light, "scale", 1.0f);
 
   anari::commit(d, light);
 
@@ -291,31 +306,12 @@ void CornellBox::commit()
 
   anari::release(d, light);
 
-  anari::Camera camera = anari::newObject<anari::Camera>(d, "orthographic");
-  anari::setParameter(d, camera, "position", glm::vec3(0.5f, 0.5f, 0.5f));
-  anari::setParameter(d, camera, "direction", glm::vec3(0.5f, 0.5f, 0.5f));
-  anari::setParameter(d, camera, "up", glm::vec3(0.5f, 0.5f, 0.5f));
-
-  anari::commit(d, camera);
-
-  anari::setAndReleaseParameter(
-      d, m_world, "light", anari::newArray1D(d, &light));
-
-  anari::release(d, camera);
-  ANARICamera cam = anariNewCamera(d, "orthographic");
-  anari::setParameter(d, cam, "position", glm::vec3(1.5f, 1.5f, 1.5f));
-  anari::setParameter(d, cam, "direction", glm::vec3(1.5f, 1.5f, 1.5f));
-  anari::setParameter(d, cam, "up", glm::vec3(1.5f, 1.5f, 1.5f));
-  anariCommit(d, camera);
-  //anari::commit(d, cam);
-  //anari::release(d, cam);
-
   anari::commit(d, m_world);
 }
 
-TestScene *sceneCornellBox(anari::Device d)
+TestScene *sceneCornellBoxHDRI(anari::Device d)
 {
-  return new CornellBox(d);
+  return new CornellBoxHDRI(d);
 }
 
 } // namespace scenes
