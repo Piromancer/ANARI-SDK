@@ -19,14 +19,14 @@ static std::vector<float> radiuses = {
     1.0f
 };
 
-static std::vector<int> caps = {
+static std::vector<glm::uint8> caps = {
     // Cone
     0,
     1
 };
 
 static std::vector<glm::vec4> colors = {
-    // Floor
+    // Cone
     {0.725f, 0.710f, 0.68f, 1.0f},
     {0.725f, 0.710f, 0.68f, 1.0f}
 };

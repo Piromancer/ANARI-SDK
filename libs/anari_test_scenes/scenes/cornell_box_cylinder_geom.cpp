@@ -8,24 +8,23 @@ namespace scenes {
 
 // cone mesh data
 static std::vector<glm::vec3> vertices = {
-    // Cone
+    // Cylinder
     {0.00f, 0.00f, 1.00f},
     {0.00f, 0.00f, -1.00f}};
 
 static std::vector<float> radiuses = {
-    // Cone
-    1.0f,
-    1.0f};
+    // Cylinder
+    0.5f};
 
-static std::vector<int> caps = {
-    // Cone
-    1,
-    1};
+static std::vector<glm::uint8> caps = {
+    // Cylinder
+    1, 1};
 
 static std::vector<glm::vec4> colors = {
-    // Floor
-    {0.725f, 0.710f, 0.68f, 1.0f},
-    {0.725f, 0.710f, 0.68f, 1.0f}};
+    // Cone
+    {1.0f, 0.0f, 0.0f, 1.0f},
+    {0.0f, 1.0f, 0.0f, 1.0f}
+};
 
 // CornelBox definitions //////////////////////////////////////////////////////
 
@@ -104,9 +103,6 @@ void CornellBoxCylinder::commit()
       d, m_world, "light", anari::newArray1D(d, &light));
 
   anari::release(d, light);
-
-  anari::setAndReleaseParameter(
-      d, m_world, "light", anari::newArray1D(d, &light));
 
   anari::commit(d, m_world);
 }
