@@ -3,6 +3,8 @@
 
 cmake_minimum_required(VERSION 3.11)
 
+message(STATUS "CMake version: ${CMAKE_VERSION}")
+
 ## Language setup
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
@@ -24,7 +26,7 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
 ## Establish project
 
-project(anari VERSION 1.0.0 LANGUAGES C CXX)
+project(anari VERSION 0.1.2 LANGUAGES C CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
@@ -36,6 +38,11 @@ option(BUILD_SHARED_LIBS "Build shared libraries instead of static" ON)
 option(BUILD_TESTING "Build tests for CTest" ON)
 option(BUILD_EXAMPLES "Build example applications and example device" ON)
 
+## The generate_all targets collects all offline code generation targets
+
+set(ANARI_JSON_PATH ${CMAKE_SOURCE_DIR}/code_gen)
+add_custom_target(generate_all)
+
 ## Add library and executable targets
 
 set(glm_DIR ${CMAKE_CURRENT_LIST_DIR}/external/glm/lib/cmake/glm)
@@ -44,7 +51,7 @@ mark_as_advanced(glm_DIR)
 
 add_subdirectory(libs)
 add_subdirectory(external)
-add_subdirectory(header_gen)
+add_subdirectory(code_gen)
 if (BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()

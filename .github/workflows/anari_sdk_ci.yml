@@ -1,0 +1,36 @@
+name: ANARI-SDK CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  ANARI_LIBRARY: example
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        config: [Release, Debug]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{ matrix.config }}
+
+    - name: Unit Tests
+      working-directory: ${{github.workspace}}/build
+      run: ctest -R unit_test -C ${{ matrix.config }}
+
+    - name: Render Tests
+      working-directory: ${{github.workspace}}/build
+      if: ${{ matrix.config == 'Release' }}
+      run: ctest -R render_test -C ${{ matrix.config }}

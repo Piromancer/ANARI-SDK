@@ -110,7 +110,10 @@ int main(int argc, const char **argv)
   printf("initialize ANARI...");
 
   // Use the 'example' library here, this is where the impl(s) come from
-  ANARILibrary lib = anariLoadLibrary("example", statusFunc, NULL);
+  ANARILibrary lib = anariLoadLibrary("sink", statusFunc, NULL);
+
+  // Use the 'trace' library here, this is where the impl(s) come from
+  ANARILibrary trace_lib = anariLoadLibrary("debug", statusFunc, NULL);
 
   // query available devices
   const char **devices = anariGetDeviceSubtypes(lib);
@@ -134,48 +137,11 @@ int main(int argc, const char **argv)
   int havePt = 0;
   for (const char **r = renderers; *r != NULL; r++) {
     printf("  - %s\n", *r);
-    if (strcmp(*r, "pathtracer") == 0)
-      havePt = 1;
-  }
-  if (!havePt) {
-    puts("No pathtracer available!");
-    return 1;
   }
 
-  // inspect default renderer parameters
-  const ANARIParameter *ptParams =
-      anariGetObjectParameters(lib, "default", "default", ANARI_RENDERER);
-
-  if (!ptParams) {
-    puts("Default renderer has no parameters.");
-  } else {
-    puts("Parameters of default renderer:");
-    for (const ANARIParameter *p = ptParams; p->name != NULL; p++) {
-      const char *desc = anariGetParameterInfo(lib,
-          "default",
-          "default",
-          ANARI_RENDERER,
-          p->name,
-          p->type,
-          "description",
-          ANARI_STRING);
-      const int *required = anariGetParameterInfo(lib,
-          "default",
-          "default",
-          ANARI_RENDERER,
-          p->name,
-          p->type,
-          "required",
-          ANARI_BOOL);
-      printf("  - [%d] %s, %s: %s\n",
-          p->type,
-          p->name,
-          required && *required ? "required" : "optional",
-          desc);
-    }
-  }
-
-  ANARIDevice dev = anariNewDevice(lib, "default");
+  ANARIDevice nested = anariNewDevice(lib, "default");
+  ANARIDevice dev = anariNewDevice(trace_lib, "debug");
+  anariSetParameter(dev, dev, "wrappedDevice", ANARI_DEVICE, &nested);
 
   if (!dev) {
     printf("\n\nERROR: could not load default device in example library\n");
@@ -184,21 +150,18 @@ int main(int argc, const char **argv)
 
   // commit device
   anariCommit(dev, dev);
-
-  printf("done!\n");
-  printf("setting up camera...");
+  anariRelease(nested, nested);
 
   // create and setup camera
   ANARICamera camera = anariNewCamera(dev, "perspective");
+  anariSetParameter(dev, camera, "name", ANARI_STRING, "perspectiveCamera");
   float aspect = imgSize[0] / (float)imgSize[1];
   anariSetParameter(dev, camera, "aspect", ANARI_FLOAT32, &aspect);
   anariSetParameter(dev, camera, "position", ANARI_FLOAT32_VEC3, cam_pos);
-  anariSetParameter(dev, camera, "direction", ANARI_FLOAT32_VEC3, cam_view);
+  anariSetParameter(dev, camera, "direction", ANARI_FLOAT32_VEC4, cam_view);
   anariSetParameter(dev, camera, "up", ANARI_FLOAT32_VEC3, cam_up);
-  anariCommit(dev, camera); // commit each object to indicate mods are done
-
-  printf("done!\n");
-  printf("setting up scene...");
+  // intentionally forget this commit
+  // anariCommit(dev, camera); // commit each object to indicate mods are done
 
   // The world to be populated with renderable objects
   ANARIWorld world = anariNewWorld(dev);
@@ -210,19 +173,16 @@ int main(int argc, const char **argv)
   // Set the vertex locations
   ANARIArray1D array =
       anariNewArray1D(dev, vertex, 0, 0, ANARI_FLOAT32_VEC3, 4, 0);
-  anariCommit(dev, array);
   anariSetParameter(dev, mesh, "vertex.position", ANARI_ARRAY1D, &array);
   anariRelease(dev, array); // we are done using this handle
 
   // Set the vertex colors
   array = anariNewArray1D(dev, color, 0, 0, ANARI_FLOAT32_VEC4, 4, 0);
-  anariCommit(dev, array);
   anariSetParameter(dev, mesh, "vertex.color", ANARI_ARRAY1D, &array);
   anariRelease(dev, array);
 
   // Set the index
   array = anariNewArray1D(dev, index, 0, 0, ANARI_UINT32_VEC3, 2, 0);
-  anariCommit(dev, array);
   anariSetParameter(dev, mesh, "primitive.index", ANARI_ARRAY1D, &array);
   anariRelease(dev, array);
 
@@ -230,8 +190,7 @@ int main(int argc, const char **argv)
   anariCommit(dev, mesh);
 
   // Set the material rendering parameters
-  ANARIMaterial mat = anariNewMaterial(dev, "matte");
-  anariCommit(dev, mat);
+  ANARIMaterial mat = anariNewMaterial(dev, "Matte");
 
   // put the mesh into a surface
   ANARISurface surface = anariNewSurface(dev);
@@ -243,45 +202,22 @@ int main(int argc, const char **argv)
 
   // put the surface directly onto the world
   array = anariNewArray1D(dev, &surface, 0, 0, ANARI_SURFACE, 1, 0);
-  anariCommit(dev, array);
   anariSetParameter(dev, world, "surface", ANARI_ARRAY1D, &array);
   anariRelease(dev, surface);
   anariRelease(dev, array);
 
   // create and setup light for Ambient Occlusion
   ANARILight light = anariNewLight(dev, "directional");
-  anariCommit(dev, light);
-  array = anariNewArray1D(dev, &light, 0, 0, ANARI_LIGHT, 1, 0);
-  anariCommit(dev, array);
+
+  // throw in some extra objects that don't belong in lights
+  ANARIObject lights[] = {light, surface, 0};
+  array = anariNewArray1D(dev, lights, 0, 0, ANARI_LIGHT, 3, 0);
   anariSetParameter(dev, world, "light", ANARI_ARRAY1D, &array);
   anariRelease(dev, light);
-  anariRelease(dev, array);
+  // intentionally leak one object
+  // anariRelease(dev, array);
 
   anariCommit(dev, world);
-
-  printf("done!\n");
-
-  // print out world bounds
-  float worldBounds[6];
-  if (anariGetProperty(dev,
-          world,
-          "bounds",
-          ANARI_FLOAT32_BOX3,
-          worldBounds,
-          sizeof(worldBounds),
-          ANARI_WAIT)) {
-    printf("\nworld bounds: ({%f, %f, %f}, {%f, %f, %f}\n\n",
-        worldBounds[0],
-        worldBounds[1],
-        worldBounds[2],
-        worldBounds[3],
-        worldBounds[4],
-        worldBounds[5]);
-  } else {
-    printf("\nworld bounds not returned\n\n");
-  }
-
-  printf("setting up renderer...");
 
   // create renderer
   ANARIRenderer renderer = anariNewRenderer(dev, "default");
@@ -290,6 +226,11 @@ int main(int argc, const char **argv)
   float bgColor[4] = {1.f, 1.f, 1.f, 1.f}; // white
   anariSetParameter(
       dev, renderer, "backgroundColor", ANARI_FLOAT32_VEC4, bgColor);
+
+  // set parameter on address of object instead of object
+  anariSetParameter(
+      dev, &renderer, "backgroundColor", ANARI_FLOAT32_VEC4, bgColor);
+
   anariCommit(dev, renderer);
 
   // create and setup frame
@@ -304,33 +245,14 @@ int main(int argc, const char **argv)
 
   anariCommit(dev, frame);
 
-  printf("rendering initial frame to firstFrame.ppm...");
-
   // render one frame
   anariRenderFrame(dev, frame);
   anariFrameReady(dev, frame, ANARI_WAIT);
 
   // access frame and write its content as PNG file
   const uint32_t *fb = (uint32_t *)anariMapFrame(dev, frame, "color");
-  writePPM("firstFrame.ppm", imgSize[0], imgSize[1], fb);
+
   anariUnmapFrame(dev, frame, "color");
-
-  printf("done!\n");
-  printf("rendering 10 accumulated frames to accumulatedFrame.ppm...");
-
-  // render 10 more frames, which are accumulated to result in a better
-  //   converged image
-  for (int frames = 0; frames < 10; frames++) {
-    anariRenderFrame(dev, frame);
-    anariFrameReady(dev, frame, ANARI_WAIT);
-  }
-
-  fb = (uint32_t *)anariMapFrame(dev, frame, "color");
-  writePPM("accumulatedFrame.ppm", imgSize[0], imgSize[1], fb);
-  anariUnmapFrame(dev, frame, "color");
-
-  printf("done!\n");
-  printf("\ncleaning up objects...");
 
   // final cleanups
   anariRelease(dev, renderer);
@@ -341,8 +263,7 @@ int main(int argc, const char **argv)
   anariRelease(dev, dev);
 
   anariUnloadLibrary(lib);
-
-  printf("done!\n");
+  anariUnloadLibrary(trace_lib);
 
   return 0;
 }

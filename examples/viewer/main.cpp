@@ -15,7 +15,7 @@ ANARILibrary g_library = nullptr;
 ANARIDevice g_device = nullptr;
 ANARILibrary g_debug = nullptr;
 bool g_enableDebug = false;
-
+bool g_verbose = false;
 
 /******************************************************************/
 static std::string pathOf(const std::string &filename)
@@ -49,32 +49,46 @@ void statusFunc(void *userData,
     fprintf(stderr, "[ERROR] %s\n", message);
   } else if (severity == ANARI_SEVERITY_WARNING) {
     fprintf(stderr, "[WARN ] %s\n", message);
-  } else if (severity == ANARI_SEVERITY_PERFORMANCE_WARNING) {
+  }
+
+  if (!g_verbose)
+    return;
+
+  if (severity == ANARI_SEVERITY_PERFORMANCE_WARNING) {
     fprintf(stderr, "[PERF ] %s\n", message);
   } else if (severity == ANARI_SEVERITY_INFO) {
-    fprintf(stderr, "[INFO] %s\n", message);
+    fprintf(stderr, "[INFO ] %s\n", message);
+  } else if (severity == ANARI_SEVERITY_DEBUG) {
+    fprintf(stderr, "[DEBUG] %s\n", message);
   }
 }
 
 /******************************************************************/
 static void initializeANARI()
 {
-
   g_library = anariLoadLibrary(g_libraryType.c_str(), statusFunc);
 
-  if(g_enableDebug)
-    g_debug = anariLoadLibrary("debug");
+  if (g_enableDebug)
+    g_debug = anariLoadLibrary("debug", statusFunc);
 
   if (!g_library)
     throw std::runtime_error("Failed to load ANARI library");
 
   ANARIDevice dev = anariNewDevice(g_library, g_deviceType.c_str());
+  if (g_enableDebug) {
+    ANARIDevice dbg = anariNewDevice(g_debug, "debug");
+    anariSetParameter(dbg, dbg, "wrappedDevice", ANARI_DEVICE, &dev);
+    anariCommit(dbg, dbg);
+    anariRelease(dev, dev);
+    dev = dbg;
+  }
   if (!dev)
     std::exit(1);
 
   // For the NVGL device: pass the function that gets the OpenGL context
-  void *ogl_func_ptr = (void*)glfwGetProcAddress;
-  anariSetParameter(dev, dev, "oglGetProcAddress", ANARI_VOID_POINTER, &ogl_func_ptr);
+  void *ogl_func_ptr = (void *)glfwGetProcAddress;
+  anariSetParameter(
+      dev, dev, "oglGetProcAddress", ANARI_VOID_POINTER, &ogl_func_ptr);
 
   // Affect the callback settings and OGL parameter
   anariCommit(dev, dev);
@@ -86,7 +100,9 @@ static void initializeANARI()
 /******************************************************************/
 void printUsage()
 {
-  std::cout << "./anariViewer [{--help|-h}] [{--library|-l} <ANARI library>] [.obj intput file]" << std::endl;
+  std::cout
+      << "./anariViewer [{--help|-h}] [{--verbose|-v}] [{--debug|-d}] [{--library|-l} <ANARI library>] [.obj intput file]"
+      << std::endl;
 }
 
 /******************************************************************/
@@ -101,6 +117,8 @@ void parseCommandLine(int argc, const char *argv[])
       g_libraryType = argv[++i];
     } else if (arg == "--debug" || arg == "-d") {
       g_enableDebug = true;
+    } else if (arg == "--verbose" || arg == "-v") {
+      g_verbose = true;
     } else {
       g_objFile = arg;
     }
@@ -134,11 +152,10 @@ int main(int argc, const char *argv[])
   delete window;
 
   anariRelease(g_device, g_device);
-  if(g_enableDebug)
+  if (g_enableDebug)
     anariUnloadLibrary(g_debug);
 
   anariUnloadLibrary(g_library);
 
   return 0;
 }
-
