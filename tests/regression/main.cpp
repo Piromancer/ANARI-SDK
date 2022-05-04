@@ -11,6 +11,8 @@
 
 // Globals ////////////////////////////////////////////////////////////////////
 
+using UIParameter = anari::scenes::ParameterInfo;
+
 std::vector<std::string> g_scenes = {
     //
     "cornell_box",
@@ -27,8 +29,8 @@ std::vector<std::string> g_scenes = {
     "cornell_box_multilight",
     "cornell_box_quad_geom",
     "texture_cube_samplers",
-    "cornell_box_cone_geom",
-    "cornell_box_cylinder_geom"
+    //"cornell_box_cone_geom",
+    //"cornell_box_cylinder_geom"
     //
 };
 
@@ -96,13 +98,23 @@ static void initializeANARI()
 static void renderScene(ANARIDevice d, const std::string &scene)
 {
   auto s = anari::scenes::createScene(d, scene.c_str());
+  if (strcmp(scene.c_str(), "cornell_box_point") == 0) {
+    printf("That IF executed\n");
+    anari::scenes::setParameter(s, "intensity", 1000.f);
+  }
   anari::scenes::commit(s);
+  auto params = anari::scenes::getParameters(s);
 
   auto camera = anari::newObject<anari::Camera>(d, "perspective");
   anari::setParameter(
       d, camera, "aspect", g_frameSize.x / (float)g_frameSize.y);
 
   auto renderer = anari::newObject<anari::Renderer>(d, g_rendererType.c_str());
+  printf("Scene name: %s\n", scene.c_str());
+  printf("Scene is cornell box point: %s\n",
+      strcmp(scene.c_str(), "cornell_box_point") == 0
+          ? "true"
+          : "false");
   anari::setParameter(d, renderer, "pixelSamples", g_numPixelSamples);
   anari::setParameter(
       d, renderer, "backgroundColor", glm::vec4(glm::vec3(0.1f), 1));
@@ -132,7 +144,7 @@ static void renderScene(ANARIDevice d, const std::string &scene)
     anari::render(d, frame);
     anari::wait(d, frame);
 
-    printf("done!\n");
+    printf("done!\n\n");
 
     auto *pixels = (uint32_t *)anari::map(d, frame, "color");
 
