@@ -9,8 +9,8 @@ namespace scenes {
 // cone mesh data
 static std::vector<glm::vec3> vertices = {
     // Cylinder
-    {0.00f, 0.00f, 1.00f},
-    {0.00f, 0.00f, -1.00f}};
+    {0.00f, 0.80f, 0.00f},
+    {0.00f, -0.80f, 0.00f}};
 
 static std::vector<float> radiuses = {
     // Cylinder
@@ -85,13 +85,23 @@ void CornellBoxCylinder::commit()
 
   anari::Light light;
 
+  float irradiance = 2.5f;
+  float angularDiameter = 0.0f;
+
+  float red = 0.22f;
+  float green = 0.22f;
+  float blue = 0.15f;
+
+  float dirX = 0.0f;
+  float dirY = 0.0f;
+  float dirZ = 1.0f;
+
   if (anari::deviceImplements(d, "ANARI_KHR_AREA_LIGHTS")) {
-    light = anari::newObject<anari::Light>(d, "quad");
-    anari::setParameter(d, light, "color", glm::vec3(0.78f, 0.551f, 0.183f));
-    anari::setParameter(d, light, "intensity", 47.f);
-    anari::setParameter(d, light, "position", glm::vec3(-0.23f, 0.98f, -0.16f));
-    anari::setParameter(d, light, "edge1", glm::vec3(0.47f, 0.0f, 0.0f));
-    anari::setParameter(d, light, "edge2", glm::vec3(0.0f, 0.0f, 0.38f));
+      light = anari::newObject<anari::Light>(d, "directional");
+      anari::setParameter(d, light, "color", glm::vec3(red, green, blue));
+      anari::setParameter(d, light, "direction", glm::vec3(dirX, dirY, dirZ));
+      anari::setParameter(d, light, "irradiance", irradiance);
+      anari::setParameter(d, light, "angularDiameter", angularDiameter);
   } else {
     light = anari::newObject<anari::Light>(d, "directional");
     anari::setParameter(d, light, "direction", glm::vec3(0.f, -0.5f, 1.f));
