@@ -3,17 +3,19 @@
 
 // anari_test_scenes
 #include "anari_test_scenes.h"
+#include "TestCases.h"
 // stb_image
 #include "stb_image_write.h"
 // std
 #include <string>
 #include <vector>
+#include <map>
 
 // Globals ////////////////////////////////////////////////////////////////////
 
 std::vector<std::string> g_scenes = {
     //
-    "cornell_box",
+    //"cornell_box",
     "gravity_spheres_volume",
     "instanced_cubes",
     "textured_cube",
@@ -28,7 +30,8 @@ std::vector<std::string> g_scenes = {
     "cornell_box_quad_geom",
     "texture_cube_samplers",
     "cornell_box_cone_geom",
-    "cornell_box_cylinder_geom"
+    "cornell_box_cylinder_geom",
+    "volume_test"
     //
 };
 
@@ -97,62 +100,73 @@ static void initializeANARI()
 
 static void renderScene(ANARIDevice d, const std::string &scene)
 {
-  auto s = anari::scenes::createScene(d, scene.c_str());
-  anari::scenes::commit(s);
+  for (auto& testcase : testCases) {
+      if (testcase.first.rfind(scene, 0) == 0) {
+          std::string caseName = testcase.first;
+          auto parameters = testcase.second;
+          std::cout << "\nTest case: " << caseName << "\n";
+          auto s = anari::scenes::createScene(d, scene.c_str());
+          for (auto& p : parameters) {
+              anari::scenes::setParameter(s, p.first, p.second);
+          }
+          //anari::scenes::setParameter(s, p.name, value);
+          anari::scenes::commit(s);
 
-  auto camera = anari::newObject<anari::Camera>(d, "perspective");
-  anari::setParameter(
-      d, camera, "aspect", g_frameSize.x / (float)g_frameSize.y);
+          auto camera = anari::newObject<anari::Camera>(d, "perspective");
+          anari::setParameter(
+              d, camera, "aspect", g_frameSize.x / (float)g_frameSize.y);
 
-  auto renderer = anari::newObject<anari::Renderer>(d, g_rendererType.c_str());
-  anari::setParameter(d, renderer, "pixelSamples", g_numPixelSamples);
-  anari::setParameter(
-      d, renderer, "backgroundColor", glm::vec4(glm::vec3(0.1f), 1));
-  anari::commit(d, renderer);
+          auto renderer = anari::newObject<anari::Renderer>(d, g_rendererType.c_str());
+          anari::setParameter(d, renderer, "pixelSamples", g_numPixelSamples);
+          anari::setParameter(
+              d, renderer, "backgroundColor", glm::vec4(glm::vec3(0.1f), 1));
+          anari::commit(d, renderer);
 
-  auto frame = anari::newObject<anari::Frame>(d);
-  anari::setParameter(d, frame, "size", g_frameSize);
-  anari::setParameter(d, frame, "color", ANARI_UFIXED8_RGBA_SRGB);
+          auto frame = anari::newObject<anari::Frame>(d);
+          anari::setParameter(d, frame, "size", g_frameSize);
+          anari::setParameter(d, frame, "color", ANARI_UFIXED8_RGBA_SRGB);
 
-  anari::setParameter(d, frame, "renderer", renderer);
-  anari::setParameter(d, frame, "camera", camera);
-  anari::setParameter(d, frame, "world", anari::scenes::getWorld(s));
+          anari::setParameter(d, frame, "renderer", renderer);
+          anari::setParameter(d, frame, "camera", camera);
+          anari::setParameter(d, frame, "world", anari::scenes::getWorld(s));
 
-  anari::commit(d, frame);
+          anari::commit(d, frame);
 
-  int imgNum = 0;
-  auto cameras = anari::scenes::getCameras(s);
-  for (auto &cam : cameras) {
-    anari::setParameter(d, camera, "position", cam.position);
-    anari::setParameter(d, camera, "direction", cam.direction);
-    anari::setParameter(d, camera, "up", cam.up);
-    anari::commit(d, camera);
+          int imgNum = 0;
+          auto cameras = anari::scenes::getCameras(s);
+          for (auto& cam : cameras) {
+              anari::setParameter(d, camera, "position", cam.position);
+              anari::setParameter(d, camera, "direction", cam.direction);
+              anari::setParameter(d, camera, "up", cam.up);
+              anari::commit(d, camera);
 
-    std::string fileName = scene + '_' + std::to_string(imgNum++) + ".png";
-    printf("rendering '%s'...", fileName.c_str());
+              std::string fileName = caseName + ".png";
+              printf("rendering '%s'...", caseName.c_str());
 
-    anari::render(d, frame);
-    anari::wait(d, frame);
+              anari::render(d, frame);
+              anari::wait(d, frame);
 
-    printf("done!\n");
+              printf("done!\n");
 
-    auto *pixels = (uint32_t *)anari::map(d, frame, "color");
+              auto* pixels = (uint32_t*)anari::map(d, frame, "color");
 
-    stbi_write_png(fileName.c_str(),
-        g_frameSize.x,
-        g_frameSize.y,
-        4,
-        pixels,
-        4 * g_frameSize.x);
+              stbi_write_png(fileName.c_str(),
+                  g_frameSize.x,
+                  g_frameSize.y,
+                  4,
+                  pixels,
+                  4 * g_frameSize.x);
 
-    anari::unmap(d, frame, "color");
+              anari::unmap(d, frame, "color");
+          }
+
+          anari::release(d, camera);
+          anari::release(d, frame);
+          anari::release(d, renderer);
+
+          anari::scenes::release(s);
+      }
   }
-
-  anari::release(d, camera);
-  anari::release(d, frame);
-  anari::release(d, renderer);
-
-  anari::scenes::release(s);
 }
 
 void printHelp()

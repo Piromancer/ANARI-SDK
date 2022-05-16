@@ -9,8 +9,8 @@ namespace scenes {
 // cone mesh data
 static std::vector<glm::vec3> vertices = {
     // Cone
-    {0.00f, 0.00f, 1.00f},
-    {0.00f, 0.00f, -1.00f}
+    {0.00f, 0.80f, 0.00f},
+    {0.00f, -0.80f, 0.00f}
 };
 
 static std::vector<float> radiuses = {
