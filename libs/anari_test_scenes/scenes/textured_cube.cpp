@@ -153,10 +153,10 @@ void TexturedCube::commit()
 std::vector<Camera> TexturedCube::cameras()
 {
   Camera cam;
-  cam.position = glm::vec3(1.25f);
+  cam.position = glm::vec3(0.f);
   cam.at = glm::vec3(0.f);
-  cam.direction = glm::normalize(cam.at - cam.position);
-  cam.up = glm::vec3(0, 1, 0);
+  cam.direction = glm::vec3(0.f, 0.f, 1.f);
+  cam.up = glm::vec3(0, 0, 0);
   return {cam};
 }
 
