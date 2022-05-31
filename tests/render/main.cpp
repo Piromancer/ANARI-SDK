@@ -139,19 +139,27 @@ static void renderScene(ANARIDevice d, const std::string &scene)
           int imgNum = 0;
           auto cameras = anari::scenes::getCameras(s);
           for (auto& cam : cameras) {
-              // Camera parameters
-              float cropRegion[4] = { 
-                  parameters["camera_imageRegion_x1"], parameters["camera_imageRegion_y1"],
-                  parameters["camera_imageRegion_x2"], parameters["camera_imageRegion_y2"]
-              };
+              if (testcase.first.rfind("camera", 0) == 0) {
+                  // Camera parameters
+                  float cropRegion[4] = {
+                      parameters["camera_imageRegion_x1"], parameters["camera_imageRegion_y1"],
+                      parameters["camera_imageRegion_x2"], parameters["camera_imageRegion_y2"]
+                  };
 
-              anari::setParameter(d, camera, "position", glm::vec3(parameters["camera_position_x"], parameters["camera_position_y"], parameters["camera_position_z"]));
-              anari::setParameter(d, camera, "direction", glm::vec3(parameters["camera_direction_x"], parameters["camera_direction_y"], parameters["camera_direction_z"]));
-              anari::setParameter(d, camera, "up", glm::vec3(parameters["camera_up_x"], parameters["camera_up_y"], parameters["camera_up_z"]));
-              anari::setParameter(d, camera, "apertureRadius", parameters["camera_apertureRadius"]);
-              anari::setParameter(d, camera, "focusDistance", parameters["camera_apertureRadius"]);
-              anari::setParameter(d, camera, "imageRegion", cropRegion);
-              anari::commit(d, camera);
+                  anari::setParameter(d, camera, "position", glm::vec3(parameters["camera_position_x"], parameters["camera_position_y"], parameters["camera_position_z"]));
+                  anari::setParameter(d, camera, "direction", glm::vec3(parameters["camera_direction_x"], parameters["camera_direction_y"], parameters["camera_direction_z"]));
+                  anari::setParameter(d, camera, "up", glm::vec3(parameters["camera_up_x"], parameters["camera_up_y"], parameters["camera_up_z"]));
+                  anari::setParameter(d, camera, "apertureRadius", parameters["camera_apertureRadius"]);
+                  anari::setParameter(d, camera, "focusDistance", parameters["camera_apertureRadius"]);
+                  anari::setParameter(d, camera, "imageRegion", cropRegion);
+                  anari::commit(d, camera);
+              }
+              else {
+                  anari::setParameter(d, camera, "position", cam.position);
+                  anari::setParameter(d, camera, "direction", cam.direction);
+                  anari::setParameter(d, camera, "up", cam.up);
+                  anari::commit(d, camera);
+              }
 
               std::string fileName = caseName + ".png";
               printf("rendering '%s'...", caseName.c_str());
