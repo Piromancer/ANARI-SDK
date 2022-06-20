@@ -25,6 +25,7 @@
 #include "scenes/cornell_box_cone_geom.h"
 #include "scenes/cornell_box_cylinder_geom.h"
 #include "scenes/textured_cube_samplers.h"
+#include "scenes/camera_test.h"
 
 namespace anari {
 namespace scenes {
@@ -42,6 +43,7 @@ static void init()
     auto &scenes = *g_scenes;
 
     scenes["cornell_box"] = &sceneCornellBox;
+    scenes["camera_test"] = &sceneCameraTest;
     scenes["gravity_spheres_volume"] = &sceneGravitySphereVolume;
     scenes["instanced_cubes"] = &sceneInstancedCubes;
     scenes["textured_cube"] = &sceneTexturedCube;

@@ -538,7 +538,7 @@ std::map<std::string, std::map<std::string, float>> testCases = {
 
         }
     },
-        
+
     ////////////////////
     // Geometry Group //
     ////////////////////
@@ -560,7 +560,7 @@ std::map<std::string, std::map<std::string, float>> testCases = {
 
         }
     },
-        
+
     //////////////////
     // Volume Group //
     //////////////////
@@ -592,6 +592,198 @@ std::map<std::string, std::map<std::string, float>> testCases = {
         "volume_test_valueRangeRight_2",
         {
             {"valueRangeLeft", 2.f}
+        }
+    },
+    {
+        "camera_test_default",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_position_x",
+        {
+            {"camera_position_x", 0.5f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_position_y",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.5f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_position_z",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -2.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_direction_x",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.2f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_direction_y",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", -0.2f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_direction_z",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 0.8f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_up_x",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_up_y",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 1.0f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_up_z",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.5f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_apertureRadius_0.5",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.5f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_apertureRadius_1",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 1.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_focusDistance_3",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 3.f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_focusDistance_0.5",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 0.5f},
+            {"camera_imageRegion_x1", 0.f}, {"camera_imageRegion_y1", 0.f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_imageRegion_x1_0.5_y1_0.5",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.5f}, {"camera_imageRegion_y1", 0.5f},
+            {"camera_imageRegion_x2", 1.f}, {"camera_imageRegion_y2", 1.f}
+        }
+    },
+    {
+        "camera_test_imageRegion_x2_0.5_y2_0.5",
+        {
+            {"camera_position_x", 0.f}, {"camera_position_y", 0.f}, {"camera_position_z", -3.f},
+            {"camera_direction_x", 0.f}, {"camera_direction_y", 0.f}, {"camera_direction_z", 1.f},
+            {"camera_up_x", 0.f}, {"camera_up_y", 0.f}, {"camera_up_z", 1.f},
+            {"camera_apertureRadius", 0.f},
+            {"camera_focusDistance", 1.f},
+            {"camera_imageRegion_x1", 0.5f}, {"camera_imageRegion_y1", 0.5f},
+            {"camera_imageRegion_x2", 0.5f}, {"camera_imageRegion_y2", 0.5f}
         }
     }
 };

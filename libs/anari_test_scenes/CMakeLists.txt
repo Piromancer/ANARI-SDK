@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME} STATIC
   anari_test_scenes.cpp
 
   scenes/cornell_box.cpp
+  scenes/camera_test.cpp
   scenes/file_obj.cpp
   scenes/gravity_spheres_volume.cpp
   scenes/instanced_cubes.cpp
