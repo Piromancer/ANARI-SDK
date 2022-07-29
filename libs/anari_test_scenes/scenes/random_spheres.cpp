@@ -44,12 +44,12 @@ void RandomSpheres::commit()
   auto geom = anari::newObject<anari::Geometry>(d, "sphere");
   auto mat = anari::newObject<anari::Material>(d, "matte");
   anari::setParameter(d, mat, "color", "color");
-  anari::commit(d, mat);
+  anari::commitParameters(d, mat);
 
   anari::setAndReleaseParameter(
       d, m_world, "surface", anari::newArray1D(d, &surface));
 
-  anari::commit(d, m_world);
+  anari::commitParameters(d, m_world);
 
   anari::setParameter(d, surface, "geometry", geom);
   anari::setParameter(d, surface, "material", mat);
@@ -68,8 +68,8 @@ void RandomSpheres::commit()
   rng.seed(0);
   std::normal_distribution<float> vert_dist(0.5f, 0.5f);
 
-  std::vector<glm::vec3> spherePositions(numSpheres);
-  std::vector<glm::vec4> sphereColors(numSpheres);
+  std::vector<glm::vec3> spherePositions((size_t(numSpheres)));
+  std::vector<glm::vec4> sphereColors((size_t(numSpheres)));
 
   for (auto &s : spherePositions) {
     s.x = vert_dist(rng);
@@ -98,7 +98,7 @@ void RandomSpheres::commit()
   if (randomizeRadii) {
     std::normal_distribution<float> radii_dist(radius / 10.f, radius);
 
-    std::vector<float> sphereRadii(numSpheres);
+    std::vector<float> sphereRadii((size_t(numSpheres)));
     for (auto &r : sphereRadii)
       r = radii_dist(rng);
 
@@ -108,9 +108,9 @@ void RandomSpheres::commit()
         anari::newArray1D(d, sphereRadii.data(), sphereRadii.size()));
   }
 
-  anari::commit(d, geom);
-  anari::commit(d, mat);
-  anari::commit(d, surface);
+  anari::commitParameters(d, geom);
+  anari::commitParameters(d, mat);
+  anari::commitParameters(d, surface);
 
   // cleanup
 

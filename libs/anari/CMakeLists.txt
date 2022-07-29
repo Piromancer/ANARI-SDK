@@ -8,8 +8,8 @@ find_package(Threads REQUIRED)
 add_library(${PROJECT_NAME}
   anari_cpp_std_defs.cpp
   API.cpp
-  Device.cpp
-  Library.cpp
+  DeviceImpl.cpp
+  LibraryImpl.cpp
   anari_cpp_glm_defs.cpp
 )
 
@@ -20,6 +20,7 @@ endif()
 target_include_directories(${PROJECT_NAME}
 PUBLIC
   $<BUILD_INTERFACE:${GENERATED_HEADER_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/anari>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -33,12 +34,16 @@ PRIVATE
   glm::glm
 )
 
+## Create version header
+
+configure_file(anari_version.h.in include/anari/anari_version.h)
+
 ## Install library + targets
 
 set_target_properties(${PROJECT_NAME}
     PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
-install(TARGETS anari
+install(TARGETS ${PROJECT_NAME}
   EXPORT anari_Exports
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     NAMELINK_SKIP
@@ -46,11 +51,6 @@ install(TARGETS anari
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   # ... and the import lib into the devel package
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-install(EXPORT anari_Exports
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/anari-${PROJECT_VERSION}
-  NAMESPACE anari::
 )
 
 install(TARGETS anari
@@ -64,5 +64,9 @@ install(TARGETS anari
 
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/anari
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/anari/anari_version.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/anari
 )
 

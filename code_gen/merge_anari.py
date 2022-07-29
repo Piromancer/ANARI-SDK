@@ -1,6 +1,8 @@
 # Copyright 2021 The Khronos Group
 # SPDX-License-Identifier: Apache-2.0
 
+import json
+
 def check_conflicts(a, b, key, scope):
     a_set = set([x[key] for x in a])
     b_set = set([x[key] for x in b])
@@ -63,12 +65,17 @@ def merge_object_table(core, extension):
             else:
                 core.append(obj)
 
-def merge(core, extension):
+def merge(core, extension, verbose=False):
+    if not "features" in core:
+        core["features"] = [core["info"]["name"]]
     for k,v in extension.items():
         if not k in core:
             core[k] = v
         elif k == "info":
-            print('merging '+extension[k]['type']+' '+extension[k]["name"])
+            if verbose:
+                print('merging '+extension[k]['type']+' '+extension[k]["name"])
+            if "name" in v:
+                core["features"].append(v["name"])
         elif k == "enums" :
             merge_enums(core[k], extension[k])
         elif k == "descriptions":
@@ -78,3 +85,28 @@ def merge(core, extension):
         else:
             check_conflicts(core[k], extension[k], 'name', k)
             core[k].extend(extension[k])
+
+def tag_feature(tree):
+    if "info" in tree and "name" in tree["info"]:
+        feature = tree["info"]["name"]
+        if "objects" in tree:
+            for obj in tree["objects"]:
+                obj["sourceFeature"] = feature
+                if "parameters" in obj:
+                    for param in obj["parameters"]:
+                        param["sourceFeature"] = feature
+
+def crawl_dependencies(root, jsons):
+    deps = []
+    deps.extend(reversed(root["info"]["dependencies"].copy()))
+    i = 0
+    while i<len(deps):
+        x = deps[i]
+        i += 1
+        matches = [p for p in jsons if p.stem == x]
+        for m in matches:
+            f = json.load(open(m))
+            if "info" in f and "dependencies" in f["info"]:
+                deps.extend(reversed(f["info"]["dependencies"]))
+    duplicates = set()
+    return [x for x in reversed(deps) if not (x in duplicates or duplicates.add(x))]

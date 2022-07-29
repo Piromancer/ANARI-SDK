@@ -4,8 +4,8 @@
 // anari
 #include "anari/anari.h"
 #include "anari/anari_cpp/Traits.h"
-#include "anari/detail/Device.h"
-#include "anari/detail/Library.h"
+#include "anari/backend/DeviceImpl.h"
+#include "anari/backend/LibraryImpl.h"
 #include "anari/ext/anari_ext_interface.h"
 // std
 #include <cstdlib>
@@ -14,19 +14,6 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
-
-#if ANARI_INTERCEPT_NULL_OBJECTS_AND_STRINGS
-#define THROW_IF_NULL(obj, name)                                               \
-  if (obj == nullptr)                                                          \
-  throw std::runtime_error(std::string("null ") + name                         \
-      + std::string(" provided to ") + __FUNCTION__)
-#else
-#define THROW_IF_NULL(obj, name)
-#endif
-
-// convenience macros for repeated use of the above
-#define THROW_IF_NULL_OBJECT(obj) THROW_IF_NULL(obj, "handle")
-#define THROW_IF_NULL_STRING(str) THROW_IF_NULL(str, "string")
 
 #define ANARI_CATCH_BEGIN try {
 #define ANARI_CATCH_END(a)                                                     \
@@ -48,27 +35,27 @@ static std::unique_ptr<T> make_unique(Args &&...args)
 }
 } // namespace
 
-using anari::Device;
-using anari::Library;
+using anari::DeviceImpl;
+using anari::LibraryImpl;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static inline Library &libraryRef(ANARILibrary l)
+static inline LibraryImpl &libraryRef(ANARILibrary l)
 {
   if (l == nullptr) {
     throw std::runtime_error("null library provided");
   }
-  return *((Library *)l);
+  return *((LibraryImpl *)l);
 }
 
-static inline Device &deviceRef(ANARIDevice d)
+static inline DeviceImpl &deviceRef(ANARIDevice d)
 {
   if (d == nullptr) {
     throw std::runtime_error("null device provided");
   }
-  return *((Device *)d);
+  return *((DeviceImpl *)d);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,10 +64,8 @@ static inline Device &deviceRef(ANARIDevice d)
 
 extern "C" ANARILibrary anariLoadLibrary(const char *libraryName,
     ANARIStatusCallback statusCB,
-    void *statusCBUserPtr) ANARI_CATCH_BEGIN
+    const void *statusCBUserPtr) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(libraryName);
-
   if (std::string(libraryName) == "environment") {
     char *libraryFromEnv = getenv("ANARI_LIBRARY");
     if (!libraryFromEnv) {
@@ -95,7 +80,7 @@ extern "C" ANARILibrary anariLoadLibrary(const char *libraryName,
 
   // Use a unique_ptr to cleanup if the Library constructor throws an exception
   try {
-    auto l = make_unique<Library>(libraryName, statusCB, statusCBUserPtr);
+    auto l = make_unique<LibraryImpl>(libraryName, statusCB, statusCBUserPtr);
     retval = (ANARILibrary)l.get();
     l.release();
   } catch (const std::exception &e) {
@@ -139,24 +124,13 @@ ANARI_CATCH_END_NORETURN()
 extern "C" ANARIDevice anariNewDevice(
     ANARILibrary l, const char *deviceType) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(deviceType)
   auto &lib = libraryRef(l);
   auto _d = lib.newDevice(deviceType);
   if (!_d)
     return nullptr;
-  auto &d = deviceRef(_d);
-  d.m_defaultStatusCB = lib.defaultStatusCB();
-  d.m_defaultStatusCBUserPtr = lib.defaultStatusCBUserPtr();
   return _d;
 }
 ANARI_CATCH_END(nullptr)
-
-extern "C" int anariDeviceImplements(
-    ANARIDevice d, const char *ext) ANARI_CATCH_BEGIN
-{
-  return deviceRef(d).deviceImplements(ext);
-}
-ANARI_CATCH_END(0)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Object Introspection ///////////////////////////////////////////////////////
@@ -172,28 +146,24 @@ extern "C" const char **anariGetObjectSubtypes(ANARILibrary l,
     const char *deviceSubtype,
     ANARIDataType objectType) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(deviceSubtype);
-
   if (std::string(deviceSubtype) == "default")
     deviceSubtype = libraryRef(l).defaultDeviceName();
-
   return libraryRef(l).getObjectSubtypes(deviceSubtype, objectType);
 }
 ANARI_CATCH_END(nullptr)
 
-extern "C" const ANARIParameter *anariGetObjectParameters(ANARILibrary l,
+extern "C" const void *anariGetObjectInfo(ANARILibrary l,
     const char *deviceSubtype,
     const char *objectSubtype,
-    ANARIDataType objectType) ANARI_CATCH_BEGIN
+    ANARIDataType objectType,
+    const char *infoName,
+    ANARIDataType infoType) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(deviceSubtype);
-  THROW_IF_NULL_STRING(objectSubtype);
-
   if (std::string(deviceSubtype) == "default")
     deviceSubtype = libraryRef(l).defaultDeviceName();
 
-  return libraryRef(l).getObjectParameters(
-      deviceSubtype, objectSubtype, objectType);
+  return libraryRef(l).getObjectProperty(
+      deviceSubtype, objectSubtype, objectType, infoName, infoType);
 }
 ANARI_CATCH_END(nullptr)
 
@@ -206,11 +176,6 @@ extern "C" const void *anariGetParameterInfo(ANARILibrary l,
     const char *infoName,
     ANARIDataType infoType) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(deviceSubtype);
-  THROW_IF_NULL_STRING(objectSubtype);
-  THROW_IF_NULL_STRING(parameterName);
-  THROW_IF_NULL_STRING(parameterType);
-
   if (std::string(deviceSubtype) == "default")
     deviceSubtype = libraryRef(l).defaultDeviceName();
 
@@ -229,9 +194,9 @@ ANARI_CATCH_END(nullptr)
 ///////////////////////////////////////////////////////////////////////////////
 
 extern "C" ANARIArray1D anariNewArray1D(ANARIDevice d,
-    void *appMemory,
+    const void *appMemory,
     ANARIMemoryDeleter deleter,
-    void *userdata,
+    const void *userdata,
     ANARIDataType type,
     uint64_t numItems1,
     uint64_t byteStride1) ANARI_CATCH_BEGIN
@@ -242,9 +207,9 @@ extern "C" ANARIArray1D anariNewArray1D(ANARIDevice d,
 ANARI_CATCH_END(nullptr)
 
 extern "C" ANARIArray2D anariNewArray2D(ANARIDevice d,
-    void *appMemory,
+    const void *appMemory,
     ANARIMemoryDeleter deleter,
-    void *userdata,
+    const void *userdata,
     ANARIDataType type,
     uint64_t numItems1,
     uint64_t numItems2,
@@ -263,9 +228,9 @@ extern "C" ANARIArray2D anariNewArray2D(ANARIDevice d,
 ANARI_CATCH_END(nullptr)
 
 extern "C" ANARIArray3D anariNewArray3D(ANARIDevice d,
-    void *appMemory,
+    const void *appMemory,
     ANARIMemoryDeleter deleter,
-    void *userdata,
+    const void *userdata,
     ANARIDataType type,
     uint64_t numItems1,
     uint64_t numItems2,
@@ -306,7 +271,6 @@ ANARI_CATCH_END_NORETURN()
 extern "C" ANARILight anariNewLight(
     ANARIDevice d, const char *type) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(type);
   return deviceRef(d).newLight(type);
 }
 ANARI_CATCH_END(nullptr)
@@ -314,7 +278,6 @@ ANARI_CATCH_END(nullptr)
 extern "C" ANARICamera anariNewCamera(
     ANARIDevice d, const char *type) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(type);
   return deviceRef(d).newCamera(type);
 }
 ANARI_CATCH_END(nullptr)
@@ -322,7 +285,6 @@ ANARI_CATCH_END(nullptr)
 extern "C" ANARIGeometry anariNewGeometry(
     ANARIDevice d, const char *type) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(type);
   return deviceRef(d).newGeometry(type);
 }
 ANARI_CATCH_END(nullptr)
@@ -330,7 +292,6 @@ ANARI_CATCH_END(nullptr)
 extern "C" ANARISpatialField anariNewSpatialField(
     ANARIDevice d, const char *type) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(type);
   return deviceRef(d).newSpatialField(type);
 }
 ANARI_CATCH_END(nullptr)
@@ -355,7 +316,6 @@ ANARI_CATCH_END(nullptr)
 extern "C" ANARIMaterial anariNewMaterial(
     ANARIDevice d, const char *material_type) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(material_type);
   return deviceRef(d).newMaterial(material_type);
 }
 ANARI_CATCH_END(nullptr)
@@ -363,7 +323,6 @@ ANARI_CATCH_END(nullptr)
 extern "C" ANARISampler anariNewSampler(
     ANARIDevice d, const char *type) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(type);
   return deviceRef(d).newSampler(type);
 }
 ANARI_CATCH_END(nullptr)
@@ -404,54 +363,34 @@ extern "C" void anariSetParameter(ANARIDevice d,
     ANARIDataType type,
     const void *mem) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_OBJECT(object);
-  THROW_IF_NULL_STRING(id);
-  if (d == object)
-    deviceRef(d).deviceSetParameter(id, type, mem);
-  else
-    deviceRef(d).setParameter(object, id, type, mem);
+  deviceRef(d).setParameter(object, id, type, mem);
 }
 ANARI_CATCH_END_NORETURN()
 
 extern "C" void anariUnsetParameter(
     ANARIDevice d, ANARIObject object, const char *id) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_OBJECT(object);
-  THROW_IF_NULL_STRING(id);
-  if (d == object)
-    deviceRef(d).deviceUnsetParameter(id);
-  else
-    deviceRef(d).unsetParameter(object, id);
+  deviceRef(d).unsetParameter(object, id);
 }
 ANARI_CATCH_END_NORETURN()
 
-extern "C" void anariCommit(ANARIDevice d, ANARIObject object) ANARI_CATCH_BEGIN
+extern "C" void anariCommitParameters(
+    ANARIDevice d, ANARIObject object) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_OBJECT(object);
-  if (d == object)
-    deviceRef(d).deviceCommit();
-  else
-    deviceRef(d).commit(object);
+  deviceRef(d).commitParameters(object);
 }
 ANARI_CATCH_END_NORETURN()
 
 extern "C" void anariRelease(
     ANARIDevice d, ANARIObject object) ANARI_CATCH_BEGIN
 {
-  if (d == object)
-    deviceRef(d).deviceRelease();
-  else
-    deviceRef(d).release(object);
+  deviceRef(d).release(object);
 }
 ANARI_CATCH_END_NORETURN()
 
 extern "C" void anariRetain(ANARIDevice d, ANARIObject object) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_OBJECT(object);
-  if (d == object)
-    deviceRef(d).deviceRetain();
-  else
-    deviceRef(d).retain(object);
+  deviceRef(d).retain(object);
 }
 ANARI_CATCH_END_NORETURN()
 
@@ -467,8 +406,6 @@ extern "C" int anariGetProperty(ANARIDevice d,
     uint64_t size,
     ANARIWaitMask mask) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_OBJECT(obj);
-  THROW_IF_NULL_STRING(name);
   return deviceRef(d).getProperty(obj, name, type, mem, size, mask);
 }
 ANARI_CATCH_END(0)
@@ -483,18 +420,20 @@ extern "C" ANARIFrame anariNewFrame(ANARIDevice d) ANARI_CATCH_BEGIN
 }
 ANARI_CATCH_END(nullptr)
 
-extern "C" const void *anariMapFrame(
-    ANARIDevice d, ANARIFrame fb, const char *channel) ANARI_CATCH_BEGIN
+extern "C" const void *anariMapFrame(ANARIDevice d,
+    ANARIFrame fb,
+    const char *channel,
+    uint32_t *width,
+    uint32_t *height,
+    ANARIDataType *pixelType) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_OBJECT(fb);
-  return deviceRef(d).frameBufferMap(fb, channel);
+  return deviceRef(d).frameBufferMap(fb, channel, width, height, pixelType);
 }
 ANARI_CATCH_END(nullptr)
 
 extern "C" void anariUnmapFrame(
     ANARIDevice d, ANARIFrame fb, const char *channel) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_OBJECT(fb);
   deviceRef(d).frameBufferUnmap(fb, channel);
 }
 ANARI_CATCH_END_NORETURN()
@@ -506,7 +445,6 @@ ANARI_CATCH_END_NORETURN()
 extern "C" ANARIRenderer anariNewRenderer(
     ANARIDevice d, const char *type) ANARI_CATCH_BEGIN
 {
-  THROW_IF_NULL_STRING(type);
   return deviceRef(d).newRenderer(type);
 }
 ANARI_CATCH_END(nullptr)

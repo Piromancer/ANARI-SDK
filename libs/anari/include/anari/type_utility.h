@@ -18,6 +18,16 @@ template<int type>
 struct ANARITypeProperties { };
 
 template<>
+struct ANARITypeProperties<ANARI_UNKNOWN> {
+    using base_type = int;
+    static const int components = 1;
+    using array_type = base_type[1];
+    static constexpr const char* enum_name = "ANARI_UNKNOWN";
+    static constexpr const char* type_name = "int";
+    static constexpr const char* array_name = "int[1]";
+    static constexpr const char* var_name = "varunknown";
+};
+template<>
 struct ANARITypeProperties<ANARI_DATA_TYPE> {
     using base_type = int32_t;
     static const int components = 1;
@@ -56,6 +66,36 @@ struct ANARITypeProperties<ANARI_BOOL> {
     static constexpr const char* type_name = "int32_t";
     static constexpr const char* array_name = "int32_t[1]";
     static constexpr const char* var_name = "varbool";
+};
+template<>
+struct ANARITypeProperties<ANARI_STRING_LIST> {
+    using base_type = const char**;
+    static const int components = 1;
+    using array_type = base_type[1];
+    static constexpr const char* enum_name = "ANARI_STRING_LIST";
+    static constexpr const char* type_name = "const char**";
+    static constexpr const char* array_name = "const char**[1]";
+    static constexpr const char* var_name = "varstring_list";
+};
+template<>
+struct ANARITypeProperties<ANARI_TYPE_LIST> {
+    using base_type = ANARIDataType*;
+    static const int components = 1;
+    using array_type = base_type[1];
+    static constexpr const char* enum_name = "ANARI_TYPE_LIST";
+    static constexpr const char* type_name = "ANARIDataType*";
+    static constexpr const char* array_name = "ANARIDataType*[1]";
+    static constexpr const char* var_name = "vartype_list";
+};
+template<>
+struct ANARITypeProperties<ANARI_PARAMETER_LIST> {
+    using base_type = ANARIParameter*;
+    static const int components = 1;
+    using array_type = base_type[1];
+    static constexpr const char* enum_name = "ANARI_PARAMETER_LIST";
+    static constexpr const char* type_name = "ANARIParameter*";
+    static constexpr const char* array_name = "ANARIParameter*[1]";
+    static constexpr const char* var_name = "varparameter_list";
 };
 template<>
 struct ANARITypeProperties<ANARI_FUNCTION_POINTER> {
@@ -1168,6 +1208,46 @@ struct ANARITypeProperties<ANARI_FLOAT32_BOX4> {
     static constexpr const char* var_name = "varfloat32_box4";
 };
 template<>
+struct ANARITypeProperties<ANARI_UINT64_REGION1> {
+    using base_type = uint64_t;
+    static const int components = 2;
+    using array_type = base_type[2];
+    static constexpr const char* enum_name = "ANARI_UINT64_REGION1";
+    static constexpr const char* type_name = "uint64_t";
+    static constexpr const char* array_name = "uint64_t[2]";
+    static constexpr const char* var_name = "varuint64_region1";
+};
+template<>
+struct ANARITypeProperties<ANARI_UINT64_REGION2> {
+    using base_type = uint64_t;
+    static const int components = 4;
+    using array_type = base_type[4];
+    static constexpr const char* enum_name = "ANARI_UINT64_REGION2";
+    static constexpr const char* type_name = "uint64_t";
+    static constexpr const char* array_name = "uint64_t[4]";
+    static constexpr const char* var_name = "varuint64_region2";
+};
+template<>
+struct ANARITypeProperties<ANARI_UINT64_REGION3> {
+    using base_type = uint64_t;
+    static const int components = 6;
+    using array_type = base_type[6];
+    static constexpr const char* enum_name = "ANARI_UINT64_REGION3";
+    static constexpr const char* type_name = "uint64_t";
+    static constexpr const char* array_name = "uint64_t[6]";
+    static constexpr const char* var_name = "varuint64_region3";
+};
+template<>
+struct ANARITypeProperties<ANARI_UINT64_REGION4> {
+    using base_type = uint64_t;
+    static const int components = 8;
+    using array_type = base_type[8];
+    static constexpr const char* enum_name = "ANARI_UINT64_REGION4";
+    static constexpr const char* type_name = "uint64_t";
+    static constexpr const char* array_name = "uint64_t[8]";
+    static constexpr const char* var_name = "varuint64_region4";
+};
+template<>
 struct ANARITypeProperties<ANARI_FLOAT32_MAT2> {
     using base_type = float;
     static const int components = 4;
@@ -1228,16 +1308,6 @@ struct ANARITypeProperties<ANARI_FLOAT32_QUAT_IJKW> {
     static constexpr const char* var_name = "varfloat32_quat_ijkw";
 };
 template<>
-struct ANARITypeProperties<ANARI_UNKNOWN> {
-    using base_type = int;
-    static const int components = 1;
-    using array_type = base_type[1];
-    static constexpr const char* enum_name = "ANARI_UNKNOWN";
-    static constexpr const char* type_name = "int";
-    static constexpr const char* array_name = "int[1]";
-    static constexpr const char* var_name = "varunknown";
-};
-template<>
 struct ANARITypeProperties<ANARI_FRAME_COMPLETION_CALLBACK> {
     using base_type = ANARIFrameCompletionCallback;
     static const int components = 1;
@@ -1251,10 +1321,14 @@ struct ANARITypeProperties<ANARI_FRAME_COMPLETION_CALLBACK> {
 template <typename R, template<int> class F, typename... Args>
 R anariTypeInvoke(ANARIDataType type, Args&&... args) {
     switch (type) {
+        case ANARI_UNKNOWN: return F<ANARI_UNKNOWN>()(std::forward<Args>(args)...);
         case ANARI_DATA_TYPE: return F<ANARI_DATA_TYPE>()(std::forward<Args>(args)...);
         case ANARI_STRING: return F<ANARI_STRING>()(std::forward<Args>(args)...);
         case ANARI_VOID_POINTER: return F<ANARI_VOID_POINTER>()(std::forward<Args>(args)...);
         case ANARI_BOOL: return F<ANARI_BOOL>()(std::forward<Args>(args)...);
+        case ANARI_STRING_LIST: return F<ANARI_STRING_LIST>()(std::forward<Args>(args)...);
+        case ANARI_TYPE_LIST: return F<ANARI_TYPE_LIST>()(std::forward<Args>(args)...);
+        case ANARI_PARAMETER_LIST: return F<ANARI_PARAMETER_LIST>()(std::forward<Args>(args)...);
         case ANARI_FUNCTION_POINTER: return F<ANARI_FUNCTION_POINTER>()(std::forward<Args>(args)...);
         case ANARI_MEMORY_DELETER: return F<ANARI_MEMORY_DELETER>()(std::forward<Args>(args)...);
         case ANARI_STATUS_CALLBACK: return F<ANARI_STATUS_CALLBACK>()(std::forward<Args>(args)...);
@@ -1366,13 +1440,16 @@ R anariTypeInvoke(ANARIDataType type, Args&&... args) {
         case ANARI_FLOAT32_BOX2: return F<ANARI_FLOAT32_BOX2>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_BOX3: return F<ANARI_FLOAT32_BOX3>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_BOX4: return F<ANARI_FLOAT32_BOX4>()(std::forward<Args>(args)...);
+        case ANARI_UINT64_REGION1: return F<ANARI_UINT64_REGION1>()(std::forward<Args>(args)...);
+        case ANARI_UINT64_REGION2: return F<ANARI_UINT64_REGION2>()(std::forward<Args>(args)...);
+        case ANARI_UINT64_REGION3: return F<ANARI_UINT64_REGION3>()(std::forward<Args>(args)...);
+        case ANARI_UINT64_REGION4: return F<ANARI_UINT64_REGION4>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_MAT2: return F<ANARI_FLOAT32_MAT2>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_MAT3: return F<ANARI_FLOAT32_MAT3>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_MAT4: return F<ANARI_FLOAT32_MAT4>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_MAT2x3: return F<ANARI_FLOAT32_MAT2x3>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_MAT3x4: return F<ANARI_FLOAT32_MAT3x4>()(std::forward<Args>(args)...);
         case ANARI_FLOAT32_QUAT_IJKW: return F<ANARI_FLOAT32_QUAT_IJKW>()(std::forward<Args>(args)...);
-        case ANARI_UNKNOWN: return F<ANARI_UNKNOWN>()(std::forward<Args>(args)...);
         case ANARI_FRAME_COMPLETION_CALLBACK: return F<ANARI_FRAME_COMPLETION_CALLBACK>()(std::forward<Args>(args)...);
         default: return F<ANARI_UNKNOWN>()(std::forward<Args>(args)...);
     }
@@ -1381,10 +1458,14 @@ R anariTypeInvoke(ANARIDataType type, Args&&... args) {
 
 inline size_t sizeOf(ANARIDataType type) {
     switch (type) {
+        case ANARI_UNKNOWN: return sizeof(int)*1;
         case ANARI_DATA_TYPE: return sizeof(int32_t)*1;
         case ANARI_STRING: return sizeof(const char*)*1;
         case ANARI_VOID_POINTER: return sizeof(void*)*1;
         case ANARI_BOOL: return sizeof(int32_t)*1;
+        case ANARI_STRING_LIST: return sizeof(const char**)*1;
+        case ANARI_TYPE_LIST: return sizeof(ANARIDataType*)*1;
+        case ANARI_PARAMETER_LIST: return sizeof(ANARIParameter*)*1;
         case ANARI_FUNCTION_POINTER: return sizeof(void(*)(void))*1;
         case ANARI_MEMORY_DELETER: return sizeof(ANARIMemoryDeleter)*1;
         case ANARI_STATUS_CALLBACK: return sizeof(ANARIStatusCallback)*1;
@@ -1496,13 +1577,16 @@ inline size_t sizeOf(ANARIDataType type) {
         case ANARI_FLOAT32_BOX2: return sizeof(float)*4;
         case ANARI_FLOAT32_BOX3: return sizeof(float)*6;
         case ANARI_FLOAT32_BOX4: return sizeof(float)*8;
+        case ANARI_UINT64_REGION1: return sizeof(uint64_t)*2;
+        case ANARI_UINT64_REGION2: return sizeof(uint64_t)*4;
+        case ANARI_UINT64_REGION3: return sizeof(uint64_t)*6;
+        case ANARI_UINT64_REGION4: return sizeof(uint64_t)*8;
         case ANARI_FLOAT32_MAT2: return sizeof(float)*4;
         case ANARI_FLOAT32_MAT3: return sizeof(float)*9;
         case ANARI_FLOAT32_MAT4: return sizeof(float)*16;
         case ANARI_FLOAT32_MAT2x3: return sizeof(float)*6;
         case ANARI_FLOAT32_MAT3x4: return sizeof(float)*12;
         case ANARI_FLOAT32_QUAT_IJKW: return sizeof(float)*4;
-        case ANARI_UNKNOWN: return sizeof(int)*1;
         case ANARI_FRAME_COMPLETION_CALLBACK: return sizeof(ANARIFrameCompletionCallback)*1;
         default: return 4;
     }
@@ -1510,10 +1594,14 @@ inline size_t sizeOf(ANARIDataType type) {
 
 inline size_t componentsOf(ANARIDataType type) {
     switch (type) {
+        case ANARI_UNKNOWN: return 1;
         case ANARI_DATA_TYPE: return 1;
         case ANARI_STRING: return 1;
         case ANARI_VOID_POINTER: return 1;
         case ANARI_BOOL: return 1;
+        case ANARI_STRING_LIST: return 1;
+        case ANARI_TYPE_LIST: return 1;
+        case ANARI_PARAMETER_LIST: return 1;
         case ANARI_FUNCTION_POINTER: return 1;
         case ANARI_MEMORY_DELETER: return 1;
         case ANARI_STATUS_CALLBACK: return 1;
@@ -1625,13 +1713,16 @@ inline size_t componentsOf(ANARIDataType type) {
         case ANARI_FLOAT32_BOX2: return 4;
         case ANARI_FLOAT32_BOX3: return 6;
         case ANARI_FLOAT32_BOX4: return 8;
+        case ANARI_UINT64_REGION1: return 2;
+        case ANARI_UINT64_REGION2: return 4;
+        case ANARI_UINT64_REGION3: return 6;
+        case ANARI_UINT64_REGION4: return 8;
         case ANARI_FLOAT32_MAT2: return 4;
         case ANARI_FLOAT32_MAT3: return 9;
         case ANARI_FLOAT32_MAT4: return 16;
         case ANARI_FLOAT32_MAT2x3: return 6;
         case ANARI_FLOAT32_MAT3x4: return 12;
         case ANARI_FLOAT32_QUAT_IJKW: return 4;
-        case ANARI_UNKNOWN: return 1;
         case ANARI_FRAME_COMPLETION_CALLBACK: return 1;
         default: return 1;
     }
@@ -1639,10 +1730,14 @@ inline size_t componentsOf(ANARIDataType type) {
 
 inline const char* toString(ANARIDataType type) {
     switch (type) {
+        case ANARI_UNKNOWN: return "ANARI_UNKNOWN";
         case ANARI_DATA_TYPE: return "ANARI_DATA_TYPE";
         case ANARI_STRING: return "ANARI_STRING";
         case ANARI_VOID_POINTER: return "ANARI_VOID_POINTER";
         case ANARI_BOOL: return "ANARI_BOOL";
+        case ANARI_STRING_LIST: return "ANARI_STRING_LIST";
+        case ANARI_TYPE_LIST: return "ANARI_TYPE_LIST";
+        case ANARI_PARAMETER_LIST: return "ANARI_PARAMETER_LIST";
         case ANARI_FUNCTION_POINTER: return "ANARI_FUNCTION_POINTER";
         case ANARI_MEMORY_DELETER: return "ANARI_MEMORY_DELETER";
         case ANARI_STATUS_CALLBACK: return "ANARI_STATUS_CALLBACK";
@@ -1754,13 +1849,16 @@ inline const char* toString(ANARIDataType type) {
         case ANARI_FLOAT32_BOX2: return "ANARI_FLOAT32_BOX2";
         case ANARI_FLOAT32_BOX3: return "ANARI_FLOAT32_BOX3";
         case ANARI_FLOAT32_BOX4: return "ANARI_FLOAT32_BOX4";
+        case ANARI_UINT64_REGION1: return "ANARI_UINT64_REGION1";
+        case ANARI_UINT64_REGION2: return "ANARI_UINT64_REGION2";
+        case ANARI_UINT64_REGION3: return "ANARI_UINT64_REGION3";
+        case ANARI_UINT64_REGION4: return "ANARI_UINT64_REGION4";
         case ANARI_FLOAT32_MAT2: return "ANARI_FLOAT32_MAT2";
         case ANARI_FLOAT32_MAT3: return "ANARI_FLOAT32_MAT3";
         case ANARI_FLOAT32_MAT4: return "ANARI_FLOAT32_MAT4";
         case ANARI_FLOAT32_MAT2x3: return "ANARI_FLOAT32_MAT2x3";
         case ANARI_FLOAT32_MAT3x4: return "ANARI_FLOAT32_MAT3x4";
         case ANARI_FLOAT32_QUAT_IJKW: return "ANARI_FLOAT32_QUAT_IJKW";
-        case ANARI_UNKNOWN: return "ANARI_UNKNOWN";
         case ANARI_FRAME_COMPLETION_CALLBACK: return "ANARI_FRAME_COMPLETION_CALLBACK";
         default: return "ANARI_UNKNOWN";
     }
@@ -1768,10 +1866,14 @@ inline const char* toString(ANARIDataType type) {
 
 inline const char* typenameOf(ANARIDataType type) {
     switch (type) {
+        case ANARI_UNKNOWN: return "int";
         case ANARI_DATA_TYPE: return "int32_t";
         case ANARI_STRING: return "const char*";
         case ANARI_VOID_POINTER: return "void*";
         case ANARI_BOOL: return "int32_t";
+        case ANARI_STRING_LIST: return "const char**";
+        case ANARI_TYPE_LIST: return "ANARIDataType*";
+        case ANARI_PARAMETER_LIST: return "ANARIParameter*";
         case ANARI_FUNCTION_POINTER: return "void(*)(void)";
         case ANARI_MEMORY_DELETER: return "ANARIMemoryDeleter";
         case ANARI_STATUS_CALLBACK: return "ANARIStatusCallback";
@@ -1883,13 +1985,16 @@ inline const char* typenameOf(ANARIDataType type) {
         case ANARI_FLOAT32_BOX2: return "float";
         case ANARI_FLOAT32_BOX3: return "float";
         case ANARI_FLOAT32_BOX4: return "float";
+        case ANARI_UINT64_REGION1: return "uint64_t";
+        case ANARI_UINT64_REGION2: return "uint64_t";
+        case ANARI_UINT64_REGION3: return "uint64_t";
+        case ANARI_UINT64_REGION4: return "uint64_t";
         case ANARI_FLOAT32_MAT2: return "float";
         case ANARI_FLOAT32_MAT3: return "float";
         case ANARI_FLOAT32_MAT4: return "float";
         case ANARI_FLOAT32_MAT2x3: return "float";
         case ANARI_FLOAT32_MAT3x4: return "float";
         case ANARI_FLOAT32_QUAT_IJKW: return "float";
-        case ANARI_UNKNOWN: return "int";
         case ANARI_FRAME_COMPLETION_CALLBACK: return "ANARIFrameCompletionCallback";
         default: return "ANARI_UNKNOWN";
     }
@@ -1897,10 +2002,14 @@ inline const char* typenameOf(ANARIDataType type) {
 
 inline const char* varnameOf(ANARIDataType type) {
     switch (type) {
+        case ANARI_UNKNOWN: return "varunknown";
         case ANARI_DATA_TYPE: return "vardata_type";
         case ANARI_STRING: return "varstring";
         case ANARI_VOID_POINTER: return "varvoid_pointer";
         case ANARI_BOOL: return "varbool";
+        case ANARI_STRING_LIST: return "varstring_list";
+        case ANARI_TYPE_LIST: return "vartype_list";
+        case ANARI_PARAMETER_LIST: return "varparameter_list";
         case ANARI_FUNCTION_POINTER: return "varfunction_pointer";
         case ANARI_MEMORY_DELETER: return "varmemory_deleter";
         case ANARI_STATUS_CALLBACK: return "varstatus_callback";
@@ -2012,13 +2121,16 @@ inline const char* varnameOf(ANARIDataType type) {
         case ANARI_FLOAT32_BOX2: return "varfloat32_box2";
         case ANARI_FLOAT32_BOX3: return "varfloat32_box3";
         case ANARI_FLOAT32_BOX4: return "varfloat32_box4";
+        case ANARI_UINT64_REGION1: return "varuint64_region1";
+        case ANARI_UINT64_REGION2: return "varuint64_region2";
+        case ANARI_UINT64_REGION3: return "varuint64_region3";
+        case ANARI_UINT64_REGION4: return "varuint64_region4";
         case ANARI_FLOAT32_MAT2: return "varfloat32_mat2";
         case ANARI_FLOAT32_MAT3: return "varfloat32_mat3";
         case ANARI_FLOAT32_MAT4: return "varfloat32_mat4";
         case ANARI_FLOAT32_MAT2x3: return "varfloat32_mat2x3";
         case ANARI_FLOAT32_MAT3x4: return "varfloat32_mat3x4";
         case ANARI_FLOAT32_QUAT_IJKW: return "varfloat32_quat_ijkw";
-        case ANARI_UNKNOWN: return "varunknown";
         case ANARI_FRAME_COMPLETION_CALLBACK: return "varframe_completion_callback";
         default: return "ANARI_UNKNOWN";
     }
@@ -2026,10 +2138,14 @@ inline const char* varnameOf(ANARIDataType type) {
 
 inline int isNormalized(ANARIDataType type) {
     switch (type) {
+        case ANARI_UNKNOWN: return 0;
         case ANARI_DATA_TYPE: return 0;
         case ANARI_STRING: return 0;
         case ANARI_VOID_POINTER: return 0;
         case ANARI_BOOL: return 0;
+        case ANARI_STRING_LIST: return 0;
+        case ANARI_TYPE_LIST: return 0;
+        case ANARI_PARAMETER_LIST: return 0;
         case ANARI_FUNCTION_POINTER: return 0;
         case ANARI_MEMORY_DELETER: return 0;
         case ANARI_STATUS_CALLBACK: return 0;
@@ -2141,13 +2257,16 @@ inline int isNormalized(ANARIDataType type) {
         case ANARI_FLOAT32_BOX2: return 0;
         case ANARI_FLOAT32_BOX3: return 0;
         case ANARI_FLOAT32_BOX4: return 0;
+        case ANARI_UINT64_REGION1: return 0;
+        case ANARI_UINT64_REGION2: return 0;
+        case ANARI_UINT64_REGION3: return 0;
+        case ANARI_UINT64_REGION4: return 0;
         case ANARI_FLOAT32_MAT2: return 0;
         case ANARI_FLOAT32_MAT3: return 0;
         case ANARI_FLOAT32_MAT4: return 0;
         case ANARI_FLOAT32_MAT2x3: return 0;
         case ANARI_FLOAT32_MAT3x4: return 0;
         case ANARI_FLOAT32_QUAT_IJKW: return 0;
-        case ANARI_UNKNOWN: return 0;
         case ANARI_FRAME_COMPLETION_CALLBACK: return 0;
         default: return 0;
     }

@@ -52,7 +52,7 @@ anari::Library g_debugLibrary = nullptr;
 
 // Helper functions ///////////////////////////////////////////////////////////
 
-static void statusFunc(void *userData,
+static void statusFunc(const void *userData,
     anari::Device device,
     anari::Object source,
     anari::DataType sourceType,
@@ -61,6 +61,10 @@ static void statusFunc(void *userData,
     const char *message)
 {
   (void)userData;
+  (void)device;
+  (void)source;
+  (void)sourceType;
+  (void)code;
   if (severity == ANARI_SEVERITY_FATAL_ERROR) {
     fprintf(stderr, "[FATAL] %s\n", message);
   } else if (severity == ANARI_SEVERITY_ERROR) {
@@ -88,7 +92,7 @@ static void initializeANARI()
   if (!d)
     std::exit(1);
 
-  anari::commit(d, d);
+  anari::commitParameters(d, d);
 
   int version = -1;
 
@@ -118,13 +122,13 @@ static void renderScene(ANARIDevice d, const std::string &scene)
           //anari::setParameter(d, camera, "position", glm::vec3(0.f, 0.f, 0.f));
           //anari::setParameter(d, camera, "direction", glm::vec3(0.0f, 0.0f, 0.0f));
           //anari::setParameter(d, camera, "up", glm::vec3(0.f, 0.f, 0.f));
-          //anari::commit(d, camera);
+          //anari::commitParameters(d, camera);
 
           auto renderer = anari::newObject<anari::Renderer>(d, g_rendererType.c_str());
           anari::setParameter(d, renderer, "pixelSamples", g_numPixelSamples);
           anari::setParameter(
               d, renderer, "backgroundColor", glm::vec4(glm::vec3(0.1f), 1));
-          anari::commit(d, renderer);
+          anari::commitParameters(d, renderer);
 
           auto frame = anari::newObject<anari::Frame>(d);
           anari::setParameter(d, frame, "size", g_frameSize);
@@ -134,7 +138,7 @@ static void renderScene(ANARIDevice d, const std::string &scene)
           anari::setParameter(d, frame, "camera", camera);
           anari::setParameter(d, frame, "world", anari::scenes::getWorld(s));
 
-          anari::commit(d, frame);
+          anari::commitParameters(d, frame);
 
           int imgNum = 0;
           auto cameras = anari::scenes::getCameras(s);
@@ -152,13 +156,13 @@ static void renderScene(ANARIDevice d, const std::string &scene)
                   anari::setParameter(d, camera, "apertureRadius", parameters["camera_apertureRadius"]);
                   anari::setParameter(d, camera, "focusDistance", parameters["camera_apertureRadius"]);
                   anari::setParameter(d, camera, "imageRegion", cropRegion);
-                  anari::commit(d, camera);
+                  anari::commitParameters(d, camera);
               }
               else {
                   anari::setParameter(d, camera, "position", cam.position);
                   anari::setParameter(d, camera, "direction", cam.direction);
                   anari::setParameter(d, camera, "up", cam.up);
-                  anari::commit(d, camera);
+                  anari::commitParameters(d, camera);
               }
 
               std::string fileName = caseName + ".png";
@@ -248,8 +252,8 @@ void parseCommandLine(int argc, const char *argv[])
     } else if (arg == "--scene" || arg == "-s") {
       g_scene = argv[++i];
     } else if (arg == "--image_size") {
-      g_frameSize.x = std::atoi(argv[++i]);
-      g_frameSize.y = std::atoi(argv[++i]);
+      g_frameSize.x = (unsigned)std::strtoul(argv[++i], nullptr, 10);
+      g_frameSize.y = (unsigned)std::strtoul(argv[++i], nullptr, 10);
     } else if (arg == "--debug" || arg == "-d") {
       g_enableDebug = true;
     }

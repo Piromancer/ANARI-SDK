@@ -1,6 +1,6 @@
 {
     "info" : {
-        "name" : "anari_core_1_0",
+        "name" : "CORE_API",
         "type" : "core",
         "dependencies" : []
     },
@@ -9,10 +9,15 @@
             "name" : "ANARIDataType",
             "baseType" : "int",
             "values" : [
+                {"name" : "ANARI_UNKNOWN", "value" : 0,  "baseType" : "int", "elements" : 1, "normalized" : false},
                 {"name" : "ANARI_DATA_TYPE", "value" : 100, "baseType" : "int32_t", "elements" : 1, "normalized" : false},
                 {"name" : "ANARI_STRING", "value" : 101, "baseType" : "const char*", "elements" : 1, "normalized" : false},
                 {"name" : "ANARI_VOID_POINTER", "value" : 102, "baseType" : "void*", "elements" : 1, "normalized" : false},
                 {"name" : "ANARI_BOOL", "value" : 103, "baseType" : "int32_t", "elements" : 1, "normalized" : false},
+
+                {"name" : "ANARI_STRING_LIST", "value" : 150, "baseType" : "const char**", "elements" : 1, "normalized" : false},
+                {"name" : "ANARI_TYPE_LIST", "value" : 151, "baseType" : "ANARIDataType*", "elements" : 1, "normalized" : false},
+                {"name" : "ANARI_PARAMETER_LIST", "value" : 152, "baseType" : "ANARIParameter*", "elements" : 1, "normalized" : false},
 
                 {"name" : "ANARI_FUNCTION_POINTER", "value" : 200, "baseType" : "void(*)(void)", "elements" : 1, "normalized" : false},
                 {"name" : "ANARI_MEMORY_DELETER", "value" : 201, "baseType" : "ANARIMemoryDeleter", "elements" : 1, "normalized" : false},
@@ -132,15 +137,18 @@
                 {"name" : "ANARI_FLOAT32_BOX3", "value" : 2010, "baseType" : "float", "elements" : 6, "normalized" : false},
                 {"name" : "ANARI_FLOAT32_BOX4", "value" : 2011, "baseType" : "float", "elements" : 8, "normalized" : false},
 
+                {"name" : "ANARI_UINT64_REGION1", "value" : 2104, "baseType" : "uint64_t", "elements" : 2, "normalized" : false},
+                {"name" : "ANARI_UINT64_REGION2", "value" : 2105, "baseType" : "uint64_t", "elements" : 4, "normalized" : false},
+                {"name" : "ANARI_UINT64_REGION3", "value" : 2106, "baseType" : "uint64_t", "elements" : 6, "normalized" : false},
+                {"name" : "ANARI_UINT64_REGION4", "value" : 2107, "baseType" : "uint64_t", "elements" : 8, "normalized" : false},
+
                 {"name" : "ANARI_FLOAT32_MAT2", "value" : 2012, "baseType" : "float", "elements" : 4, "normalized" : false},
                 {"name" : "ANARI_FLOAT32_MAT3", "value" : 2013, "baseType" : "float", "elements" : 9, "normalized" : false},
                 {"name" : "ANARI_FLOAT32_MAT4", "value" : 2014, "baseType" : "float", "elements" : 16, "normalized" : false},
                 {"name" : "ANARI_FLOAT32_MAT2x3", "value" : 2015, "baseType" : "float", "elements" : 6, "normalized" : false},
                 {"name" : "ANARI_FLOAT32_MAT3x4", "value" : 2016, "baseType" : "float", "elements" : 12, "normalized" : false},
 
-                {"name" : "ANARI_FLOAT32_QUAT_IJKW", "value" : 2017, "baseType" : "float", "elements" : 4, "normalized" : false},
-
-                {"name" : "ANARI_UNKNOWN", "value" : 9999999,  "baseType" : "int", "elements" : 1, "normalized" : false}
+                {"name" : "ANARI_FLOAT32_QUAT_IJKW", "value" : 2017, "baseType" : "float", "elements" : 4, "normalized" : false}
             ]
         }, {
             "name" : "ANARILogLevel",
@@ -152,10 +160,6 @@
                 {"name" : "ANARI_LOG_ERROR", "value" : 4},
                 {"name" : "ANARI_LOG_NONE", "value" : 5}
             ]
-        }, {
-            "name" : "ANARIExtension",
-            "baseType" : "const char*",
-            "values" : []
         }, {
             "name" : "ANARIWaitMask",
             "baseType" : "unsigned",
@@ -218,14 +222,14 @@
             "name" : "ANARIMemoryDeleter",
             "returnType" : "void",
             "arguments" : [
-                {"name" : "userPtr", "type" : "void*"},
-                {"name" : "appMemory", "type" : "void*"}
+                {"name" : "userPtr", "type" : "const void*"},
+                {"name" : "appMemory", "type" : "const void*"}
             ]
         }, {
             "name" : "ANARIStatusCallback",
             "returnType" : "void",
             "arguments" : [
-                {"name" : "userPtr", "type" : "void*"},
+                {"name" : "userPtr", "type" : "const void*"},
                 {"name" : "device", "type" : "ANARIDevice"},
                 {"name" : "source", "type" : "ANARIObject"},
                 {"name" : "sourceType", "type" : "ANARIDataType"},
@@ -253,7 +257,7 @@
             "arguments" : [
                 {"name" : "name", "type" : "const char*"},
                 {"name" : "statusCallback", "type" : "ANARIStatusCallback", "default" : "0"},
-                {"name" : "statusCallbackUserData", "type" : "void*", "default" : "0"}
+                {"name" : "statusCallbackUserData", "type" : "const void*", "default" : "0"}
             ]
         }, {
             "name" : "anariUnloadLibrary",
@@ -283,20 +287,13 @@
                 {"name" : "type", "type" : "const char*", "default" : "\"default\""}
             ]
         }, {
-            "name" : "anariDeviceImplements",
-            "returnType" : "int",
-            "arguments" : [
-                {"name" : "device", "type" : "ANARIDevice"},
-                {"name" : "profile", "type" : "const char*"}
-            ]
-        }, {
             "name" : "anariNewArray1D",
             "returnType" : "ANARIArray1D",
             "arguments" : [
                 {"name" : "device", "type" : "ANARIDevice"},
-                {"name" : "appMemory", "type" : "void*"},
+                {"name" : "appMemory", "type" : "const void*"},
                 {"name" : "deleter", "type" : "ANARIMemoryDeleter"},
-                {"name" : "userData", "type" : "void*"},
+                {"name" : "userData", "type" : "const void*"},
                 {"name" : "dataType", "type" : "ANARIDataType"},
                 {"name" : "numItems1", "type" : "uint64_t"},
                 {"name" : "byteStride1", "type" : "uint64_t", "default" : "0"}
@@ -306,9 +303,9 @@
             "returnType" : "ANARIArray2D",
             "arguments" : [
                 {"name" : "device", "type" : "ANARIDevice"},
-                {"name" : "appMemory", "type" : "void*"},
+                {"name" : "appMemory", "type" : "const void*"},
                 {"name" : "deleter", "type" : "ANARIMemoryDeleter"},
-                {"name" : "userData", "type" : "void*"},
+                {"name" : "userData", "type" : "const void*"},
                 {"name" : "dataType", "type" : "ANARIDataType"},
                 {"name" : "numItems1", "type" : "uint64_t"},
                 {"name" : "numItems2", "type" : "uint64_t"},
@@ -320,9 +317,9 @@
             "returnType" : "ANARIArray3D",
             "arguments" : [
                 {"name" : "device", "type" : "ANARIDevice"},
-                {"name" : "appMemory", "type" : "void*"},
+                {"name" : "appMemory", "type" : "const void*"},
                 {"name" : "deleter", "type" : "ANARIMemoryDeleter"},
-                {"name" : "userData", "type" : "void*"},
+                {"name" : "userData", "type" : "const void*"},
                 {"name" : "dataType", "type" : "ANARIDataType"},
                 {"name" : "numItems1", "type" : "uint64_t"},
                 {"name" : "numItems2", "type" : "uint64_t"},
@@ -445,7 +442,7 @@
                 {"name" : "name", "type" : "const char*"}
             ]
         }, {
-            "name" : "anariCommit",
+            "name" : "anariCommitParameters",
             "returnType" : "void",
             "arguments" : [
                 {"name" : "device", "type" : "ANARIDevice"},
@@ -480,13 +477,15 @@
                 {"name" : "objectType", "type" : "ANARIDataType"}
             ]
         }, {
-            "name" : "anariGetObjectParameters",
-            "returnType" : "const ANARIParameter*",
+            "name" : "anariGetObjectInfo",
+            "returnType" : "const void*",
             "arguments" : [
                 {"name" : "library", "type" : "ANARILibrary"},
                 {"name" : "deviceSubtype", "type" : "const char*"},
                 {"name" : "objectSubtype", "type" : "const char*"},
-                {"name" : "objectType", "type" : "ANARIDataType"}
+                {"name" : "objectType", "type" : "ANARIDataType"},
+                {"name" : "infoName", "type" : "const char*"},
+                {"name" : "infoType", "type" : "ANARIDataType"}
             ]
         }, {
             "name" : "anariGetParameterInfo",
@@ -525,7 +524,10 @@
             "arguments" : [
                 {"name" : "device", "type" : "ANARIDevice"},
                 {"name" : "frame", "type" : "ANARIFrame"},
-                {"name" : "channel", "type" : "const char*"}
+                {"name" : "channel", "type" : "const char*"},
+                {"name" : "width", "type" : "uint32_t*"},
+                {"name" : "height", "type" : "uint32_t*"},
+                {"name" : "pixelType", "type" : "ANARIDataType*"}
             ]
         }, {
             "name" : "anariUnmapFrame",

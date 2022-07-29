@@ -3,8 +3,8 @@
 
 #include "ExampleDevice.h"
 
-#include "anari/detail/Library.h"
-#include "include/anari/devices/example.h"
+#include "anari/backend/LibraryImpl.h"
+#include "anari/ext/example_device/anariNewExampleDevice.h"
 
 #include "Array.h"
 #include "frame/Frame.h"
@@ -13,7 +13,7 @@
 #include "scene/World.h"
 
 // debug interface
-#include "DebugObject.h"
+#include "anari/ext/debug/DebugObject.h"
 
 // std
 #include <algorithm>
@@ -122,7 +122,6 @@ static void removeParamOnObject(ANARIObject obj, const char *p)
 
 static std::map<int, SetParamFcn *> setParamFcns = {
     declare_param_setter(ANARIDataType),
-    declare_param_setter(Device *),
     declare_param_setter_void_ptr(void *),
     declare_param_setter(ANARIFrameCompletionCallback),
     declare_param_setter(bool),
@@ -169,7 +168,9 @@ static std::map<int, SetParamFcn *> setParamFcns = {
     declare_param_setter(mat3),
     declare_param_setter(mat3x2),
     declare_param_setter(mat4x3),
-    declare_param_setter(mat4)};
+    declare_param_setter(mat4),
+    declare_param_setter(box1),
+    declare_param_setter(box3)};
 
 #undef declare_param_setter
 #undef declare_param_setter_object
@@ -180,49 +181,11 @@ static std::map<int, SetParamFcn *> setParamFcns = {
 // ExampleDevice definitions //////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-int ExampleDevice::deviceImplements(const char *_extension)
-{
-  std::string extension = _extension;
-  if (extension == ANARI_KHR_FRAME_COMPLETION_CALLBACK)
-    return 1;
-  return 0;
-}
-
-void ExampleDevice::deviceSetParameter(
-    const char *_id, ANARIDataType type, const void *mem)
-{
-  std::string id = _id;
-  if (id == "numThreads" && type == ANARI_INT32)
-    setParam(id, *static_cast<const int *>(mem));
-}
-
-void ExampleDevice::deviceUnsetParameter(const char *id)
-{
-  removeParam(id);
-}
-
-void ExampleDevice::deviceCommit()
-{
-  m_numThreads =
-      getParam<int>("numThreads", std::thread::hardware_concurrency() - 1);
-  m_numThreads = std::max(m_numThreads, 1);
-}
-
-void ExampleDevice::deviceRetain()
-{
-  this->refInc();
-}
-
-void ExampleDevice::deviceRelease()
-{
-  this->refDec();
-}
-
 // Data Arrays ////////////////////////////////////////////////////////////////
 
-ANARIArray1D ExampleDevice::newArray1D(void *appMemory,
+ANARIArray1D ExampleDevice::newArray1D(const void *appMemory,
     ANARIMemoryDeleter deleter,
-    void *userData,
+    const void *userData,
     ANARIDataType type,
     uint64_t numItems,
     uint64_t byteStride)
@@ -236,9 +199,9 @@ ANARIArray1D ExampleDevice::newArray1D(void *appMemory,
   }
 }
 
-ANARIArray2D ExampleDevice::newArray2D(void *appMemory,
+ANARIArray2D ExampleDevice::newArray2D(const void *appMemory,
     ANARIMemoryDeleter deleter,
-    void *userData,
+    const void *userData,
     ANARIDataType type,
     uint64_t numItems1,
     uint64_t numItems2,
@@ -255,9 +218,9 @@ ANARIArray2D ExampleDevice::newArray2D(void *appMemory,
       byteStride2);
 }
 
-ANARIArray3D ExampleDevice::newArray3D(void *appMemory,
+ANARIArray3D ExampleDevice::newArray3D(const void *appMemory,
     ANARIMemoryDeleter deleter,
-    void *userData,
+    const void *userData,
     ANARIDataType type,
     uint64_t numItems1,
     uint64_t numItems2,
@@ -355,6 +318,7 @@ ANARIWorld ExampleDevice::newWorld()
 }
 
 anari::debug_device::ObjectFactory *getDebugFactory();
+const char **query_extensions();
 
 int ExampleDevice::getProperty(ANARIObject object,
     const char *name,
@@ -366,7 +330,7 @@ int ExampleDevice::getProperty(ANARIObject object,
   if (mask == ANARI_WAIT)
     flushCommitBuffer();
 
-  if ((void *)object == (void *)this) {
+  if (handleIsDevice(object)) {
     std::string_view prop = name;
     if (prop == "version" && type == ANARI_INT32) {
       writeToVoidP(mem, DEVICE_VERSION);
@@ -374,9 +338,13 @@ int ExampleDevice::getProperty(ANARIObject object,
     } else if (prop == "debugObjects" && type == ANARI_FUNCTION_POINTER) {
       writeToVoidP(mem, getDebugFactory);
       return 1;
+    } else if (prop == "features" && type == ANARI_VOID_POINTER) {
+      writeToVoidP(mem, query_extensions());
+      return 1;
     }
-  } else
+  } else {
     return referenceFromHandle(object).getProperty(name, type, mem, mask);
+  }
 
   return 0;
 }
@@ -386,8 +354,10 @@ int ExampleDevice::getProperty(ANARIObject object,
 void ExampleDevice::setParameter(
     ANARIObject object, const char *name, ANARIDataType type, const void *mem)
 {
-  if (type == ANARI_UNKNOWN)
-    throw std::runtime_error("cannot set ANARI_UNKNOWN parameter type");
+  if (handleIsDevice(object)) {
+    deviceSetParameter(name, type, mem);
+    return;
+  }
 
   auto *fcn = setParamFcns[type];
 
@@ -404,11 +374,19 @@ void ExampleDevice::setParameter(
 
 void ExampleDevice::unsetParameter(ANARIObject o, const char *name)
 {
-  referenceFromHandle(o).removeParam(name);
+  if (handleIsDevice(o))
+    deviceUnsetParameter(name);
+  else
+    referenceFromHandle(o).removeParam(name);
 }
 
-void ExampleDevice::commit(ANARIObject h)
+void ExampleDevice::commitParameters(ANARIObject h)
 {
+  if (handleIsDevice(h)) {
+    deviceCommit();
+    return;
+  }
+
   auto &o = referenceFromHandle(h);
   o.refInc(RefType::INTERNAL);
   if (o.commitPriority() != COMMIT_PRIORITY_DEFAULT)
@@ -420,6 +398,10 @@ void ExampleDevice::release(ANARIObject o)
 {
   if (!o)
     return;
+  else if (handleIsDevice(o)) {
+    this->refDec();
+    return;
+  }
 
   auto &obj = referenceFromHandle(o);
 
@@ -435,7 +417,10 @@ void ExampleDevice::release(ANARIObject o)
 
 void ExampleDevice::retain(ANARIObject o)
 {
-  referenceFromHandle(o).refInc(RefType::PUBLIC);
+  if (handleIsDevice(o))
+    this->refInc();
+  else
+    referenceFromHandle(o).refInc(RefType::PUBLIC);
 }
 
 // Frame Manipulation /////////////////////////////////////////////////////////
@@ -445,16 +430,13 @@ ANARIFrame ExampleDevice::newFrame()
   return createObjectForAPI<Frame, ANARIFrame>();
 }
 
-const void *ExampleDevice::frameBufferMap(ANARIFrame _fb, const char *channel)
+const void *ExampleDevice::frameBufferMap(ANARIFrame fb,
+    const char *channel,
+    uint32_t *width,
+    uint32_t *height,
+    ANARIDataType *pixelType)
 {
-  auto &fb = referenceFromHandle<Frame>(_fb);
-
-  if (channel == std::string("color"))
-    return fb.mapColorBuffer();
-  else if (channel == std::string("depth"))
-    return fb.mapDepthBuffer();
-  else
-    return nullptr;
+  return referenceFromHandle<Frame>(fb).map(channel, width, height, pixelType);
 }
 
 void ExampleDevice::frameBufferUnmap(ANARIFrame, const char *)
@@ -517,6 +499,11 @@ ExampleDevice::ExampleDevice()
   deviceCommit();
 }
 
+ExampleDevice::ExampleDevice(ANARILibrary library) : DeviceImpl(library)
+{
+  deviceCommit();
+}
+
 void ExampleDevice::flushCommitBuffer()
 {
   if (m_needToSortCommits) {
@@ -538,19 +525,47 @@ void ExampleDevice::flushCommitBuffer()
   m_objectsToCommit.clear();
 }
 
-const char **query_object_types(ANARIDataType type);
-const ANARIParameter *query_params(ANARIDataType type, const char *subtype);
+void ExampleDevice::deviceSetParameter(
+    const char *_id, ANARIDataType type, const void *mem)
+{
+  std::string id = _id;
+  if (id == "numThreads" && type == ANARI_INT32)
+    setParam(id, *static_cast<const int *>(mem));
+}
 
+void ExampleDevice::deviceUnsetParameter(const char *id)
+{
+  removeParam(id);
+}
+
+void ExampleDevice::deviceCommit()
+{
+  m_numThreads =
+      getParam<int>("numThreads", std::thread::hardware_concurrency() - 1);
+  m_numThreads = std::max(m_numThreads, 1);
+}
+
+const char **query_object_types(ANARIDataType type);
+const void *query_object_info(ANARIDataType type,
+    const char *subtype,
+    const char *infoName,
+    ANARIDataType infoType);
+const void *query_param_info(ANARIDataType type,
+    const char *subtype,
+    const char *paramName,
+    ANARIDataType paramType,
+    const char *infoName,
+    ANARIDataType infoType);
 } // namespace example_device
 } // namespace anari
 
 static char deviceName[] = "example";
 
 extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_NEW_DEVICE(
-    example, subtype)
+    example, library, subtype)
 {
   if (subtype == std::string("default") || subtype == std::string("example"))
-    return (ANARIDevice) new anari::example_device::ExampleDevice();
+    return (ANARIDevice) new anari::example_device::ExampleDevice(library);
   return nullptr;
 }
 
@@ -560,44 +575,34 @@ extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_INIT(example)
 }
 
 extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_GET_DEVICE_SUBTYPES(
-    example, libdata)
+    example, library)
 {
   static const char *devices[] = {deviceName, nullptr};
   return devices;
 }
 
 extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_GET_OBJECT_SUBTYPES(
-    example, libdata, deviceSubtype, objectType)
+    example, library, deviceSubtype, objectType)
 {
-  /*
-  if (objectType == ANARI_RENDERER) {
-    static std::vector<const char *> renderers;
-    renderers.clear();
-    anari::example_device::Renderer::init();
-    for (auto &r : *anari::example_device::Renderer::g_renderers)
-      renderers.push_back(r.first.c_str());
-    renderers.push_back(nullptr);
-    return renderers.data();
-  }
-  return nullptr;
-  */
   return anari::example_device::query_object_types(objectType);
 }
 
-extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_GET_OBJECT_PARAMETERS(
-    example, libdata, deviceSubtype, objectSubtype, objectType)
+extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_GET_OBJECT_PROPERTY(
+    example,
+    library,
+    deviceSubtype,
+    objectSubtype,
+    objectType,
+    propertyName,
+    propertyType)
 {
-  /*
-  if (objectType == ANARI_RENDERER)
-    return anari::example_device::Renderer::g_parameters;
-  return nullptr;
-  */
-  return anari::example_device::query_params(objectType, objectSubtype);
+  return anari::example_device::query_object_info(
+      objectType, objectSubtype, propertyName, propertyType);
 }
 
 extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_GET_PARAMETER_PROPERTY(
     example,
-    libdata,
+    library,
     deviceSubtype,
     objectSubtype,
     objectType,
@@ -606,30 +611,12 @@ extern "C" EXAMPLE_DEVICE_INTERFACE ANARI_DEFINE_LIBRARY_GET_PARAMETER_PROPERTY(
     propertyName,
     propertyType)
 {
-  if (objectType == ANARI_RENDERER) {
-    int i = 0;
-    while (anari::example_device::Renderer::g_parameters[i].name != nullptr) {
-      if (std::string(anari::example_device::Renderer::g_parameters[i].name)
-              == std::string(parameterName)
-          && (anari::example_device::Renderer::g_parameters[i].type
-              == parameterType))
-        break;
-
-      i++;
-    }
-    if (anari::example_device::Renderer::g_parameters[i].name == nullptr)
-      return nullptr;
-    if (propertyType == ANARI_STRING
-        && std::string(propertyName) == std::string("description"))
-      return anari::example_device::Renderer::g_parameterinfos[i].desc;
-    if (propertyType == ANARI_BOOL
-        && std::string(propertyName) == std::string("required"))
-      return &anari::example_device::Renderer::g_parameterinfos[i].req;
-    if (propertyType == parameterType
-        && std::string(propertyName) == std::string("default"))
-      return &anari::example_device::Renderer::g_parameterinfos[i].def;
-  }
-  return nullptr;
+  return anari::example_device::query_param_info(objectType,
+      objectSubtype,
+      parameterName,
+      parameterType,
+      propertyName,
+      propertyType);
 }
 
 extern "C" EXAMPLE_DEVICE_INTERFACE ANARIDevice anariNewExampleDevice()

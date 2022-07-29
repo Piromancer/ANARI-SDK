@@ -3,21 +3,21 @@
 
 #pragma once
 
-#include "anari/detail/IntrusivePtr.h"
+#include "anari/backend/utilities/IntrusivePtr.h"
 // anari
-#include "anari/detail/Device.h"
-#include "anari/detail/ParameterizedObject.h"
+#include "anari/backend/DeviceImpl.h"
+#include "anari/backend/utilities/ParameterizedObject.h"
 // std
 #include <vector>
 
-#include "interface.h"
+#include "ExampleDeviceInterface.h"
 
 namespace anari {
 namespace example_device {
 
 struct Object;
 
-struct EXAMPLE_DEVICE_INTERFACE ExampleDevice : public Device,
+struct EXAMPLE_DEVICE_INTERFACE ExampleDevice : public DeviceImpl,
                                                 public RefCounted,
                                                 public ParameterizedObject
 {
@@ -25,42 +25,27 @@ struct EXAMPLE_DEVICE_INTERFACE ExampleDevice : public Device,
   // Main interface to accepting API calls
   /////////////////////////////////////////////////////////////////////////////
 
-  // Device API ///////////////////////////////////////////////////////////////
-
-  int deviceImplements(const char *extension) override;
-
-  void deviceSetParameter(
-      const char *id, ANARIDataType type, const void *mem) override;
-
-  void deviceUnsetParameter(const char *id) override;
-
-  void deviceCommit() override;
-
-  void deviceRetain() override;
-
-  void deviceRelease() override;
-
   // Data Arrays //////////////////////////////////////////////////////////////
 
-  ANARIArray1D newArray1D(void *appMemory,
+  ANARIArray1D newArray1D(const void *appMemory,
       ANARIMemoryDeleter deleter,
-      void *userdata,
+      const void *userdata,
       ANARIDataType,
       uint64_t numItems1,
       uint64_t byteStride1) override;
 
-  ANARIArray2D newArray2D(void *appMemory,
+  ANARIArray2D newArray2D(const void *appMemory,
       ANARIMemoryDeleter deleter,
-      void *userdata,
+      const void *userdata,
       ANARIDataType,
       uint64_t numItems1,
       uint64_t numItems2,
       uint64_t byteStride1,
       uint64_t byteStride2) override;
 
-  ANARIArray3D newArray3D(void *appMemory,
+  ANARIArray3D newArray3D(const void *appMemory,
       ANARIMemoryDeleter deleter,
-      void *userdata,
+      const void *userdata,
       ANARIDataType,
       uint64_t numItems1,
       uint64_t numItems2,
@@ -116,7 +101,7 @@ struct EXAMPLE_DEVICE_INTERFACE ExampleDevice : public Device,
 
   void unsetParameter(ANARIObject object, const char *name) override;
 
-  void commit(ANARIObject object) override;
+  void commitParameters(ANARIObject object) override;
 
   void release(ANARIObject _obj) override;
   void retain(ANARIObject _obj) override;
@@ -125,7 +110,11 @@ struct EXAMPLE_DEVICE_INTERFACE ExampleDevice : public Device,
 
   ANARIFrame newFrame() override;
 
-  const void *frameBufferMap(ANARIFrame fb, const char *channel) override;
+  const void *frameBufferMap(ANARIFrame fb,
+      const char *channel,
+      uint32_t *width,
+      uint32_t *height,
+      ANARIDataType *pixelType) override;
 
   void frameBufferUnmap(ANARIFrame fb, const char *channel) override;
 
@@ -142,11 +131,16 @@ struct EXAMPLE_DEVICE_INTERFACE ExampleDevice : public Device,
   /////////////////////////////////////////////////////////////////////////////
 
   ExampleDevice();
+  ExampleDevice(ANARILibrary);
   ~ExampleDevice() override = default;
 
   void flushCommitBuffer();
 
  private:
+  void deviceSetParameter(const char *id, ANARIDataType type, const void *mem);
+  void deviceUnsetParameter(const char *id);
+  void deviceCommit();
+
   int m_numThreads{1};
   std::vector<Object *> m_objectsToCommit;
   bool m_needToSortCommits{false};

@@ -8,11 +8,6 @@
 // stb_image
 #include "stb_image.h"
 
-static void anari_free(void *ptr, void *)
-{
-  std::free(ptr);
-}
-
 namespace anari {
 namespace scenes {
 
@@ -42,8 +37,6 @@ static void loadObj(
 {
   auto &world = *_world;
 
-  auto inf = std::numeric_limits<float>::infinity();
-
   /////////////////////////////////////////////////////////////////////////////
 
   OBJData objdata;
@@ -68,14 +61,14 @@ static void loadObj(
   std::vector<ANARIMaterial> materials;
 
   auto defaultMaterial = anari::newObject<anari::Material>(d, "matte");
-  anari::commit(d, defaultMaterial);
+  anari::commitParameters(d, defaultMaterial);
 
   for (auto &mat : objdata.materials) {
     auto m = anari::newObject<anari::Material>(d, "transparentMatte");
 
     anari::setParameter(d, m, "color", ANARI_FLOAT32_VEC3, &mat.diffuse[0]);
     anari::setParameter(d, m, "opacity", mat.dissolve);
-    anari::commit(d, m);
+    anari::commitParameters(d, m);
 
     materials.push_back(m);
   }
@@ -89,8 +82,6 @@ static void loadObj(
   std::vector<glm::vec2> vt;
 
   for (auto &shape : objdata.shapes) {
-    auto numSrcIndices = shape.mesh.indices.size();
-
     v.clear();
     vt.clear();
 
@@ -140,16 +131,16 @@ static void loadObj(
           anari::newArray1D(d, vt.data(), vt.size()));
     }
 
-    anari::commit(d, geom);
+    anari::commitParameters(d, geom);
 
     auto surface = anari::newObject<anari::Surface>(d);
 
     int matID = shape.mesh.material_ids[0];
-    auto mat = matID < 0 ? defaultMaterial : materials[matID];
+    auto mat = matID < 0 ? defaultMaterial : materials[size_t(matID)];
     anari::setParameter(d, surface, "material", mat);
     anari::setParameter(d, surface, "geometry", geom);
 
-    anari::commit(d, surface);
+    anari::commitParameters(d, surface);
     anari::release(d, geom);
 
     meshes.push_back(surface);
@@ -166,24 +157,24 @@ static void loadObj(
   auto light = anari::newObject<anari::Light>(d, "directional");
   anari::setParameter(d, light, "direction", glm::vec3(-1, -2, -1));
   anari::setParameter(d, light, "irradiance", 4.f);
-  anari::commit(d, light);
+  anari::commitParameters(d, light);
 
   anari::setAndReleaseParameter(
       d, group, "light", anari::newArray1D(d, &light));
 
   anari::release(d, light);
 
-  anari::commit(d, group);
+  anari::commitParameters(d, group);
 
   anari::setAndReleaseParameter(d, instance, "group", group);
 
-  anari::commit(d, instance);
+  anari::commitParameters(d, instance);
 
   anari::setAndReleaseParameter(
       d, world, "instance", anari::newArray1D(d, &instance));
   anari::release(d, instance);
 
-  anari::commit(d, world);
+  anari::commitParameters(d, world);
 
   for (auto &m : meshes)
     anari::release(d, m);
