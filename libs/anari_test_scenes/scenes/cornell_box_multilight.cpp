@@ -314,17 +314,17 @@ void CornellBoxMultilight::commit()
       "primitive.index",
       anari::newArray1D(d, indices.data(), indices.size()));
 
-  anari::commit(d, geom);
+  anari::commitParameters(d, geom);
 
   auto surface = anari::newObject<anari::Surface>(d);
   anari::setAndReleaseParameter(d, surface, "geometry", geom);
 
   auto mat = anari::newObject<anari::Material>(d, "matte");
   anari::setParameter(d, mat, "color", "color");
-  anari::commit(d, mat);
+  anari::commitParameters(d, mat);
   anari::setAndReleaseParameter(d, surface, "material", mat);
 
-  anari::commit(d, surface);
+  anari::commitParameters(d, surface);
 
   anari::setAndReleaseParameter(
       d, m_world, "surface", anari::newArray1D(d, &surface));
@@ -361,8 +361,8 @@ void CornellBoxMultilight::commit()
 
   std::vector<anari::Light> light_array = {light1, light2};
 
-  anari::commit(d, light1);
-  anari::commit(d, light2);
+  anari::commitParameters(d, light1);
+  anari::commitParameters(d, light2);
 
   anari::setAndReleaseParameter(
       d, m_world, "light", anari::newArray1D(d, light_array.data(), light_array.size()));
@@ -370,7 +370,7 @@ void CornellBoxMultilight::commit()
   anari::release(d, light1);
   anari::release(d, light2);
 
-  anari::commit(d, m_world);
+  anari::commitParameters(d, m_world);
 }
 
 TestScene *sceneCornellBoxMultilight(anari::Device d)

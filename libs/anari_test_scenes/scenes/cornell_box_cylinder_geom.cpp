@@ -67,17 +67,17 @@ void CornellBoxCylinder::commit()
       "primitive.radius",
       anari::newArray1D(d, radiuses.data(), radiuses.size()));
 
-  anari::commit(d, geom);
+  anari::commitParameters(d, geom);
 
   auto surface = anari::newObject<anari::Surface>(d);
   anari::setAndReleaseParameter(d, surface, "geometry", geom);
 
   auto mat = anari::newObject<anari::Material>(d, "matte");
   anari::setParameter(d, mat, "color", "color");
-  anari::commit(d, mat);
+  anari::commitParameters(d, mat);
   anari::setAndReleaseParameter(d, surface, "material", mat);
 
-  anari::commit(d, surface);
+  anari::commitParameters(d, surface);
 
   anari::setAndReleaseParameter(
       d, m_world, "surface", anari::newArray1D(d, &surface));
@@ -96,25 +96,20 @@ void CornellBoxCylinder::commit()
   float dirY = 0.0f;
   float dirZ = 1.0f;
 
-  if (anari::deviceImplements(d, "ANARI_KHR_AREA_LIGHTS")) {
       light = anari::newObject<anari::Light>(d, "directional");
       anari::setParameter(d, light, "color", glm::vec3(red, green, blue));
       anari::setParameter(d, light, "direction", glm::vec3(dirX, dirY, dirZ));
       anari::setParameter(d, light, "irradiance", irradiance);
       anari::setParameter(d, light, "angularDiameter", angularDiameter);
-  } else {
-    light = anari::newObject<anari::Light>(d, "directional");
-    anari::setParameter(d, light, "direction", glm::vec3(0.f, -0.5f, 1.f));
-  }
 
-  anari::commit(d, light);
+  anari::commitParameters(d, light);
 
   anari::setAndReleaseParameter(
       d, m_world, "light", anari::newArray1D(d, &light));
 
   anari::release(d, light);
 
-  anari::commit(d, m_world);
+  anari::commitParameters(d, m_world);
 }
 
 TestScene *sceneCornellBoxCylinder(anari::Device d)
