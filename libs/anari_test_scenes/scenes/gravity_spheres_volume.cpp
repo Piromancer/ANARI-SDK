@@ -14,7 +14,7 @@ struct Point
   float weight;
 };
 
-static std::vector<Point> generatePoints(int numPoints)
+static std::vector<Point> generatePoints(size_t numPoints)
 {
   // create random number distributions for point center and weight
   std::mt19937 gen(0);
@@ -55,7 +55,7 @@ static std::vector<float> generateVoxels(
       for (int i = 0; i < dims.x; i++) {
         // index in array
         size_t index =
-            size_t(k) * dims.z * dims.y + size_t(j) * dims.x + size_t(i);
+            size_t(k) * size_t(dims.z) * size_t(dims.y) + size_t(j) * size_t(dims.x) + size_t(i);
 
         // compute volume value
         float value = 0.f;
@@ -106,8 +106,8 @@ void GravityVolume::commit()
 
   const bool withGeometry = getParam<bool>("withGeometry", false);
   const int volumeDims = 128;
-  const int numPoints = 10;
-  const auto voxelRange = glm::vec2(0.f, 10.f);
+  const size_t numPoints = 10;
+  const float voxelRange[2] = {0.f, 10.f};
 
   auto points = generatePoints(numPoints);
   auto voxels = generateVoxels(points, glm::ivec3(volumeDims));
@@ -119,7 +119,7 @@ void GravityVolume::commit()
       field,
       "data",
       anari::newArray3D(d, voxels.data(), volumeDims, volumeDims, volumeDims));
-  anari::commit(d, field);
+  anari::commitParameters(d, field);
 
   auto volume = anari::newObject<anari::Volume>(d, "scivis");
   anari::setAndReleaseParameter(d, volume, "field", field);
@@ -141,10 +141,10 @@ void GravityVolume::commit()
         volume,
         "opacity",
         anari::newArray1D(d, opacities.data(), opacities.size()));
-    anari::setParameter(d, volume, "valueRange", voxelRange);
+    anariSetParameter(d, volume, "valueRange", ANARI_FLOAT32_BOX1, voxelRange);
   }
 
-  anari::commit(d, volume);
+  anari::commitParameters(d, volume);
 
   if (withGeometry) {
     std::vector<glm::vec3> positions(numPoints);
@@ -159,15 +159,15 @@ void GravityVolume::commit()
         "vertex.position",
         anari::newArray1D(d, positions.data(), positions.size()));
     anari::setParameter(d, geom, "radius", 0.05f);
-    anari::commit(d, geom);
+    anari::commitParameters(d, geom);
 
     auto mat = anari::newObject<anari::Material>(d, "matte");
-    anari::commit(d, mat);
+    anari::commitParameters(d, mat);
 
     auto surface = anari::newObject<anari::Surface>(d);
     anari::setAndReleaseParameter(d, surface, "geometry", geom);
     anari::setAndReleaseParameter(d, surface, "material", mat);
-    anari::commit(d, surface);
+    anari::commitParameters(d, surface);
 
     anari::setAndReleaseParameter(
         d, m_world, "surface", anari::newArray1D(d, &surface));
@@ -182,7 +182,7 @@ void GravityVolume::commit()
 
   setDefaultLight(m_world);
 
-  anari::commit(d, m_world);
+  anari::commitParameters(d, m_world);
 }
 
 TestScene *sceneGravitySphereVolume(anari::Device d)

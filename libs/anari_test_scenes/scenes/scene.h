@@ -6,7 +6,7 @@
 #include "../anari_test_scenes.h"
 // anari
 #include "anari/anari_cpp/ext/std.h"
-#include "anari/detail/ParameterizedObject.h"
+#include "anari/backend/utilities/ParameterizedObject.h"
 
 namespace anari {
 namespace scenes {
@@ -25,7 +25,7 @@ struct TestScene : public ParameterizedObject
   virtual bool animated() const;
   virtual void computeNextFrame();
 
-  ~TestScene();
+  virtual ~TestScene();
 
  protected:
   TestScene(anari::Device device);

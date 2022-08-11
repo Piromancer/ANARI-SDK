@@ -63,10 +63,11 @@ helper library. The targets which are exported are as follows:
 
 - `anari::anari` : main library target to link with `libanari`
 - `anari::anari_utilities` : library target which adds implementation helpers
+- `anari::anari_library_debug` : library target for the debug device
 
-These targets can be found with CMake via `find_package(anari)`. There is an
-example provided to demonstrate what consuming the ANARI SDK with CMake looks
-like [here](examples/cmake_find_anari).
+These targets can be found with CMake via `find_package(anari)`. The examples
+are written such that they can be built stand alone from the SDK source tree.
+The simplest usage can be found [here](examples/simple).
 
 ## Running the examples
 
@@ -108,9 +109,10 @@ independently from the SDK. (see below)
 
 Below is a list of available ANARI implemenations compatible with this SDK:
 
+- [AMD RadeonProRender](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRenderANARI)
 - [Intel OSPRay](https://github.com/ospray/anari-ospray)
-- [NVIDIA VisRTX](https://github.com/NVIDIA/VisRTX)
 - [NVIDIA USD](https://github.com/NVIDIA-Omniverse/AnariUsdDevice)
+- [NVIDIA VisRTX](https://github.com/NVIDIA/VisRTX)
 
 If you implement a backend to the ANARI SDK, please open a PR to add it to this
 list!

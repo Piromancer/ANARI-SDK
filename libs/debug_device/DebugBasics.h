@@ -16,10 +16,9 @@ class DebugBasics : public DebugInterface {
 
 public:
     DebugBasics(DebugDevice *td);
-    void anariDeviceImplements(ANARIDevice device, const char* profile) override;
-    void anariNewArray1D(ANARIDevice device, void* appMemory, ANARIMemoryDeleter deleter, void* userData, ANARIDataType dataType, uint64_t numItems1, uint64_t byteStride1) override;
-    void anariNewArray2D(ANARIDevice device, void* appMemory, ANARIMemoryDeleter deleter, void* userData, ANARIDataType dataType, uint64_t numItems1, uint64_t numItems2, uint64_t byteStride1, uint64_t byteStride2) override;
-    void anariNewArray3D(ANARIDevice device, void* appMemory, ANARIMemoryDeleter deleter, void* userData, ANARIDataType dataType, uint64_t numItems1, uint64_t numItems2, uint64_t numItems3, uint64_t byteStride1, uint64_t byteStride2, uint64_t byteStride3) override;
+    void anariNewArray1D(ANARIDevice device, const void* appMemory, ANARIMemoryDeleter deleter, const void* userData, ANARIDataType dataType, uint64_t numItems1, uint64_t byteStride1) override;
+    void anariNewArray2D(ANARIDevice device, const void* appMemory, ANARIMemoryDeleter deleter, const void* userData, ANARIDataType dataType, uint64_t numItems1, uint64_t numItems2, uint64_t byteStride1, uint64_t byteStride2) override;
+    void anariNewArray3D(ANARIDevice device, const void* appMemory, ANARIMemoryDeleter deleter, const void* userData, ANARIDataType dataType, uint64_t numItems1, uint64_t numItems2, uint64_t numItems3, uint64_t byteStride1, uint64_t byteStride2, uint64_t byteStride3) override;
     void anariMapArray(ANARIDevice device, ANARIArray array) override;
     void anariUnmapArray(ANARIDevice device, ANARIArray array) override;
     void anariNewLight(ANARIDevice device, const char* type) override;
@@ -36,7 +35,7 @@ public:
     void anariNewObject(ANARIDevice device, const char* objectType, const char* type) override;
     void anariSetParameter(ANARIDevice device, ANARIObject object, const char* name, ANARIDataType dataType, const void* mem) override;
     void anariUnsetParameter(ANARIDevice device, ANARIObject object, const char* name) override;
-    void anariCommit(ANARIDevice device, ANARIObject object) override;
+    void anariCommitParameters(ANARIDevice device, ANARIObject object) override;
     void anariRelease(ANARIDevice device, ANARIObject object) override;
     void anariRetain(ANARIDevice device, ANARIObject object) override;
     void anariGetProperty(ANARIDevice device, ANARIObject object, const char* name, ANARIDataType type, void* mem, uint64_t size, ANARIWaitMask mask) override;

@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "anari/detail/IntrusivePtr.h"
+#include "anari/backend/utilities/IntrusivePtr.h"
 // anari
-#include "anari/detail/Device.h"
+#include "anari/backend/DeviceImpl.h"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #ifdef _WIN32
 #ifdef SINK_DEVICE_STATIC_DEFINE
@@ -29,45 +29,29 @@
 namespace anari {
 namespace sink_device {
 
-struct SINK_DEVICE_INTERFACE SinkDevice : public Device,
-                                              public RefCounted
+struct SINK_DEVICE_INTERFACE SinkDevice : public DeviceImpl, public RefCounted
 {
-  // Device API ///////////////////////////////////////////////////////////////
-
-  int deviceImplements(const char *extension) override;
-
-  void deviceSetParameter(
-      const char *id, ANARIDataType type, const void *mem) override;
-
-  void deviceUnsetParameter(const char *id) override;
-
-  void deviceCommit() override;
-
-  void deviceRetain() override;
-
-  void deviceRelease() override;
-
   // Data Arrays //////////////////////////////////////////////////////////////
 
-  ANARIArray1D newArray1D(void *appMemory,
+  ANARIArray1D newArray1D(const void *appMemory,
       ANARIMemoryDeleter deleter,
-      void *userdata,
+      const void *userdata,
       ANARIDataType,
       uint64_t numItems1,
       uint64_t byteStride1) override;
 
-  ANARIArray2D newArray2D(void *appMemory,
+  ANARIArray2D newArray2D(const void *appMemory,
       ANARIMemoryDeleter deleter,
-      void *userdata,
+      const void *userdata,
       ANARIDataType,
       uint64_t numItems1,
       uint64_t numItems2,
       uint64_t byteStride1,
       uint64_t byteStride2) override;
 
-  ANARIArray3D newArray3D(void *appMemory,
+  ANARIArray3D newArray3D(const void *appMemory,
       ANARIMemoryDeleter deleter,
-      void *userdata,
+      const void *userdata,
       ANARIDataType,
       uint64_t numItems1,
       uint64_t numItems2,
@@ -123,7 +107,7 @@ struct SINK_DEVICE_INTERFACE SinkDevice : public Device,
 
   void unsetParameter(ANARIObject object, const char *name) override;
 
-  void commit(ANARIObject object) override;
+  void commitParameters(ANARIObject object) override;
 
   void release(ANARIObject _obj) override;
   void retain(ANARIObject _obj) override;
@@ -132,7 +116,11 @@ struct SINK_DEVICE_INTERFACE SinkDevice : public Device,
 
   ANARIFrame newFrame() override;
 
-  const void *frameBufferMap(ANARIFrame fb, const char *channel) override;
+  const void *frameBufferMap(ANARIFrame fb,
+      const char *channel,
+      uint32_t *width,
+      uint32_t *height,
+      ANARIDataType *pixelType) override;
 
   void frameBufferUnmap(ANARIFrame fb, const char *channel) override;
 
@@ -148,53 +136,58 @@ struct SINK_DEVICE_INTERFACE SinkDevice : public Device,
   // Helper/other functions and data members
   /////////////////////////////////////////////////////////////////////////////
 
-  SinkDevice();
-  ~SinkDevice();
-private:
+  SinkDevice(ANARILibrary);
+  ~SinkDevice() = default;
 
-  struct Object {
+ private:
+  struct Object
+  {
     int64_t refcount = 1;
     ANARIMemoryDeleter deleter = nullptr;
-    void *userdata = nullptr;
-    void *memory = nullptr;
+    const void *userdata = nullptr;
+    const void *memory = nullptr;
     ANARIDataType type;
 
-    void *map() {
-      return memory;
+    void *map()
+    {
+      return const_cast<void *>(memory);
     }
-    void retain() {
+    void retain()
+    {
       refcount += 1;
     }
-    void release() {
+    void release()
+    {
       refcount -= 1;
-      if(refcount == 0 && deleter) {
+      if (refcount == 0 && deleter) {
         deleter(userdata, memory);
         deleter = nullptr;
       }
     }
-    Object(ANARIDataType type) : type(type) {
-
-    }
-    ~Object() {
-      if(deleter) {
-       deleter(userdata, memory);
+    Object(ANARIDataType type) : type(type) {}
+    ~Object()
+    {
+      if (deleter) {
+        deleter(userdata, memory);
       }
     }
   };
 
   std::vector<std::unique_ptr<Object>> objects;
 
-  template<typename T>
-  T nextHandle() {
+  template <typename T>
+  T nextHandle()
+  {
     uintptr_t next = objects.size();
     objects.emplace_back(new Object(ANARITypeFor<T>::value));
     return reinterpret_cast<T>(next);
   }
 
-  template<typename T>
-  Object* getObject(T handle) {
+  template <typename T>
+  Object *getObject(T handle)
+  {
     uintptr_t index = reinterpret_cast<uintptr_t>(handle);
-    if(index < objects.size()) {
+    if (index < objects.size()) {
       return objects[index].get();
     } else {
       return nullptr;

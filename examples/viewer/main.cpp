@@ -9,6 +9,7 @@
 // Global variables
 std::string g_libraryType = "environment";
 std::string g_deviceType = "default";
+std::string g_rendererType = "default";
 std::string g_objFile;
 
 ANARILibrary g_library = nullptr;
@@ -16,6 +17,7 @@ ANARIDevice g_device = nullptr;
 ANARILibrary g_debug = nullptr;
 bool g_enableDebug = false;
 bool g_verbose = false;
+const bool g_true = true;
 
 /******************************************************************/
 static std::string pathOf(const std::string &filename)
@@ -34,7 +36,7 @@ static std::string pathOf(const std::string &filename)
 
 /******************************************************************/
 /* statusFunc(): the callback to use when a status report is made */
-void statusFunc(void *userData,
+void statusFunc(const void *userData,
     ANARIDevice device,
     ANARIObject source,
     ANARIDataType sourceType,
@@ -42,7 +44,7 @@ void statusFunc(void *userData,
     ANARIStatusCode code,
     const char *message)
 {
-  (void)userData;
+  bool verbose = *(const bool*)userData;
   if (severity == ANARI_SEVERITY_FATAL_ERROR) {
     fprintf(stderr, "[FATAL] %s\n", message);
   } else if (severity == ANARI_SEVERITY_ERROR) {
@@ -51,7 +53,7 @@ void statusFunc(void *userData,
     fprintf(stderr, "[WARN ] %s\n", message);
   }
 
-  if (!g_verbose)
+  if (!verbose)
     return;
 
   if (severity == ANARI_SEVERITY_PERFORMANCE_WARNING) {
@@ -63,13 +65,14 @@ void statusFunc(void *userData,
   }
 }
 
+
 /******************************************************************/
 static void initializeANARI()
 {
-  g_library = anariLoadLibrary(g_libraryType.c_str(), statusFunc);
+  g_library = anariLoadLibrary(g_libraryType.c_str(), statusFunc, &g_verbose);
 
   if (g_enableDebug)
-    g_debug = anariLoadLibrary("debug", statusFunc);
+    g_debug = anariLoadLibrary("debug", statusFunc, &g_true);
 
   if (!g_library)
     throw std::runtime_error("Failed to load ANARI library");
@@ -77,21 +80,16 @@ static void initializeANARI()
   ANARIDevice dev = anariNewDevice(g_library, g_deviceType.c_str());
   if (g_enableDebug) {
     ANARIDevice dbg = anariNewDevice(g_debug, "debug");
-    anariSetParameter(dbg, dbg, "wrappedDevice", ANARI_DEVICE, &dev);
-    anariCommit(dbg, dbg);
-    anariRelease(dev, dev);
+    anari::setParameter(dbg, dbg, "wrappedDevice", ANARI_DEVICE, &dev);
+    anari::commitParameters(dbg, dbg);
+    anari::release(dev, dev);
     dev = dbg;
   }
   if (!dev)
     std::exit(1);
 
-  // For the NVGL device: pass the function that gets the OpenGL context
-  void *ogl_func_ptr = (void *)glfwGetProcAddress;
-  anariSetParameter(
-      dev, dev, "oglGetProcAddress", ANARI_VOID_POINTER, &ogl_func_ptr);
-
   // Affect the callback settings and OGL parameter
-  anariCommit(dev, dev);
+  anari::commitParameters(dev, dev);
 
   // Save in the global variable
   g_device = dev;
@@ -101,7 +99,12 @@ static void initializeANARI()
 void printUsage()
 {
   std::cout
-      << "./anariViewer [{--help|-h}] [{--verbose|-v}] [{--debug|-d}] [{--library|-l} <ANARI library>] [.obj intput file]"
+      << "./anariViewer [{--help|-h}]\n"
+      << "   [{--verbose|-v}] [{--debug|-g}]\n"
+      << "   [{--library|-l} <ANARI library>]\n"
+      << "   [{--device|-d} <ANARI device>]\n"
+      << "   [{--renderer|-r} <ANARI renderer>]\n"
+      << "   [.obj intput file]"
       << std::endl;
 }
 
@@ -115,7 +118,11 @@ void parseCommandLine(int argc, const char *argv[])
       std::exit(0);
     } else if (arg == "--library" || arg == "-l") {
       g_libraryType = argv[++i];
-    } else if (arg == "--debug" || arg == "-d") {
+    } else if (arg == "--device" || arg == "-d") {
+      g_deviceType = argv[++i];
+    } else if (arg == "--renderer" || arg == "-r") {
+      g_rendererType = argv[++i];
+    } else if (arg == "--debug" || arg == "-g") {
       g_enableDebug = true;
     } else if (arg == "--verbose" || arg == "-v") {
       g_verbose = true;
@@ -139,7 +146,7 @@ int main(int argc, const char *argv[])
 
   // Set the opening scene.  When no filename argument is provided, default
   //   to the "random_sphere" scene
-  window->setDevice(g_device);
+  window->setDevice(g_device, g_rendererType);
   if (!g_objFile.empty())
     window->setScene("file_obj", "fileName", g_objFile);
   else
@@ -152,6 +159,7 @@ int main(int argc, const char *argv[])
   delete window;
 
   anariRelease(g_device, g_device);
+
   if (g_enableDebug)
     anariUnloadLibrary(g_debug);
 

@@ -20,15 +20,23 @@ class DebugGenerator:
         type_enums = next(x for x in anari["enums"] if x["name"] == "ANARIDataType")
         self.type_enum_dict = {e["name"]: e for e in type_enums["values"]}
 
+        features = set()
+
         offset = 0
         for obj in anari["objects"]:
             if not obj["type"] in self.objects:
                 self.objects[obj["type"]] = []
 
+            if "feature" in obj:
+                features.add(obj["feature"])
+
             parameter_list = []
             parameter_type_list = []
             for param in obj["parameters"]:
                 parameter_list.append(param)
+                if "feature" in param:
+                    features.add(param["feature"])
+
                 for t in param["types"]:
                     parameter_type_list.append((param["name"], t))
 
@@ -48,44 +56,40 @@ class DebugGenerator:
             self.parameter_index.extend([(obj["type"], name, parameter_list[i]["name"]) for i in range(0, length)])
             offset += length
 
-        self.named_types = list(set([k[0] for k in self.named_objects]))
-        self.subtype_list = list(set([k[1] for k in self.named_objects]))
+        self.named_types = sorted(list(set([k[0] for k in self.named_objects])))
+        self.subtype_list = sorted(list(set([k[1] for k in self.named_objects])))
+        self.feature_list = sorted(list(features))
 
 
     def generate_validation_objects_decl(self, factoryname):
         code = ""
-        code += "namespace anari {\n"
-        code += "namespace debug_device {\n"
-        code += "class " + factoryname + " : public ObjectFactory {\n"
+        code += "class " + factoryname + " : public anari::debug_device::ObjectFactory {\n"
         code += "public:\n"
-        code += "   DebugObjectBase* new_volume(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_geometry(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_spatial_field(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_light(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_camera(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_material(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_sampler(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_renderer(const char *name, DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_device(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_array1d(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_array2d(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_array3d(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_frame(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_group(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_instance(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_world(DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
-        code += "   DebugObjectBase* new_surface(DebugDevice *td, ANARIObject wh, ANARIObject h) override; \n"
+        code += "   anari::debug_device::DebugObjectBase* new_volume(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_geometry(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_spatial_field(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_light(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_camera(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_material(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_sampler(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_renderer(const char *name, anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_device(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_array1d(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_array2d(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_array3d(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_frame(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_group(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_instance(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_world(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   anari::debug_device::DebugObjectBase* new_surface(anari::debug_device::DebugDevice *td, ANARIObject wh, ANARIObject h) override;\n"
+        code += "   void print_summary(anari::debug_device::DebugDevice *td) override;\n"
+        code += "   void use_feature(int feature);\n"
         code += "};\n"
-        code += "}\n"
-        code += "}\n"
         return code
 
     def generate_validation_objects_impl(self, factoryname):
         base = "DebugObject"
-        arrayBase = "ArrayDebugObject"
         code = ""
-        code += "namespace anari {\n"
-        code += "namespace debug_device {\n"
         code += "namespace {\n"
         for obj in self.anari["objects"]:
             params = obj["parameters"]
@@ -94,15 +98,14 @@ class DebugGenerator:
             if "name" in obj:
                 objname += "_" + obj["name"]
                 subtype = obj["name"]
-            b = arrayBase if obj["type"] in ["ANARI_ARRAY1D", "ANARI_ARRAY2D", "ANARI_ARRAY3D"] else base
-            code += "class " + objname + " : public " + b + "<" + obj["type"] + "> {\n"
+            code += "class " + objname + " : public " + base + "<" + obj["type"] + "> {\n"
             if params:
                 code += "   static " + hash_gen.gen_hash_function("param_hash", [p["name"] for p in params], indent = "   ")
                 code += "   public:\n"
-                code += "   " + objname + "(DebugDevice *td, ANARIObject wh, ANARIObject h)"
-                code += ": " + b + "(td, wh, h) { }\n"
+                code += "   " + objname + "(DebugDevice *td, " + factoryname + " *factory, ANARIObject wh, ANARIObject h)"
+                code += ": " + base + "(td, wh, h) { (void)factory; }\n"
                 code += "   void setParameter(const char *paramname, ANARIDataType paramtype, const void *mem) {\n"
-                code += "      " + b + "::setParameter(paramname, paramtype, mem);\n"
+                code += "      " + base + "::setParameter(paramname, paramtype, mem);\n"
                 code += "      int idx = param_hash(paramname);\n"
                 code += "      switch(idx) {\n"
                 for i in range(0, len(params)):
@@ -121,7 +124,10 @@ class DebugGenerator:
                 code += "   }\n"
 
             code += "   void commit() {\n"
-            code += "      " + b + "::commit();\n"
+            code += "      " + base + "::commit();\n"
+            code += "   }\n"
+            code += "   const char* getSubtype() {\n"
+            code += "      return \"%s\";\n"%subtype
             code += "   }\n"
             code += "};\n"
         code += "}\n"
@@ -137,20 +143,21 @@ class DebugGenerator:
             code += "   switch(idx) {\n"
             for i in range(0, len(subtypes)):
                 code += "      case %d:\n"%i
-                code += "         return new " + t[6:].lower() + "_" + subtypes[i] + "(td, wh, h);\n"
+                code += "         return new " + t[6:].lower() + "_" + subtypes[i] + "(td, this, wh, h);\n"
             code += "      default:\n"
             code += "         unknown_subtype(td, " + t + ", name);\n"
-            code += "         return new DebugObject<"+t+">(td, wh, h);\n"
+            code += "         return new SubtypedDebugObject<"+t+">(td, wh, h, name);\n"
             code += "   }\n"
             code += "}\n"
 
         for t in sorted(self.anon_objects.keys()):
             type_name = t[6:].lower()
             code += "DebugObjectBase* " + factoryname + "::new_" + type_name + "(DebugDevice *td, ANARIObject wh, ANARIObject h) {\n"
-            code += "   return new " + type_name + "(td, wh, h);\n"
+            code += "   return new " + type_name + "(td, this, wh, h);\n"
             code += "}\n"
 
-        code += "}\n"
+        code += "void " + factoryname + "::print_summary(DebugDevice *td) {\n"
+        code += "   (void)td;\n"
         code += "}\n"
         return code
 
@@ -161,6 +168,7 @@ parser.add_argument("-j", "--json", dest="json", type=pathlib.Path, action="appe
 parser.add_argument("-p", "--prefix", dest="prefix", help="Prefix for the classes and filenames.")
 parser.add_argument("--header", dest="header", action="store_true", default=False, help="Generate a separate header.")
 parser.add_argument("-n", "--namespace", dest="namespace", help="Namespace for the classes and filenames.")
+parser.add_argument("-o", "--output", dest="outdir", type=pathlib.Path, default=pathlib.Path("."), help="Output directory")
 args = parser.parse_args()
 
 #flattened list of all input jsons in supplied directories
@@ -170,45 +178,67 @@ jsons = [entry for j in args.json for entry in j.glob("**/*.json")]
 device = json.load(args.devicespec)
 print("opened " + device["info"]["type"] + " " + device["info"]["name"])
 
+dependencies = merge_anari.crawl_dependencies(device, jsons)
 #merge all dependencies
-for x in device["info"]["dependencies"]:
+for x in dependencies:
     matches = [p for p in jsons if p.stem == x]
     for m in matches:
-        merge_anari.merge(device, json.load(open(m)))
+        feature = json.load(open(m))
+        merge_anari.tag_feature(feature)
+        merge_anari.merge(device, feature)
 
 #generate files
 gen = DebugGenerator(device)
 
+def begin_namespaces(args):
+    output = ""
+    if args.namespace:
+        for n in args.namespace.split("::"):
+            output += "namespace %s {\n"%n
+    return output
+
+def end_namespaces(args):
+    output = ""
+    if args.namespace:
+        for n in args.namespace.split("::"):
+            output += "}\n"
+    return output
+
 if args.header:
-    with open(args.prefix + "DebugFactory.h", mode='w') as f:
+    with open(args.outdir/(args.prefix + "DebugFactory.h"), mode='w') as f:
         f.write("// Copyright 2021 The Khronos Group\n")
         f.write("// SPDX-License-Identifier: Apache-2.0\n\n")
         f.write("// This file was generated by "+os.path.basename(__file__)+"\n")
         f.write("// Don't make changes to this directly\n\n")
 
         f.write("#pragma once\n")
-        f.write("#include \"DebugObject.h\"\n")
+        f.write("#include \"anari/ext/debug/DebugObject.h\"\n")
+        f.write(begin_namespaces(args))
         f.write(gen.generate_validation_objects_decl(args.prefix + "DebugFactory"))
+        f.write(end_namespaces(args))
 
-with open(args.prefix + "DebugFactory.cpp", mode='w') as f:
+with open(args.outdir/(args.prefix + "DebugFactory.cpp"), mode='w') as f:
     f.write("// Copyright 2021 The Khronos Group\n")
     f.write("// SPDX-License-Identifier: Apache-2.0\n\n")
     f.write("// This file was generated by "+os.path.basename(__file__)+"\n")
     f.write("// Don't make changes to this directly\n\n")
 
+
     if args.header:
         f.write("#include \""+args.prefix+"DebugFactory.h\"\n")
+        f.write("using namespace anari::debug_device;\n")
+        f.write(begin_namespaces(args))
     else:
-        f.write("#include \"DebugObject.h\"\n")
+        f.write("#include \"anari/ext/debug/DebugObject.h\"\n")
+        f.write("using namespace anari::debug_device;\n")
+        f.write(begin_namespaces(args))
         f.write(gen.generate_validation_objects_decl(args.prefix + "DebugFactory"))
+
 
     f.write(gen.generate_validation_objects_impl(args.prefix + "DebugFactory"))
 
-    f.write("namespace anari {\n")
-    f.write("namespace " + args.namespace + " {\n")
     f.write("anari::debug_device::ObjectFactory* getDebugFactory() {\n")
-    f.write("   static debug_device::" + args.prefix + "DebugFactory f;\n")
+    f.write("   static " + args.prefix + "DebugFactory f;\n")
     f.write("   return &f;\n")
     f.write("}\n")
-    f.write("}\n")
-    f.write("}\n")
+    f.write(end_namespaces(args))
